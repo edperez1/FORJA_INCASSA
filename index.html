@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="claro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/jpeg" href="/logo-incasa.jpg">
+  <meta name="description" content="Acceso al sistema de pesaje de INCASA, Industria Centroamericana S.A.">
+  <title>Acceso · INCASA - Sistema de Pesaje</title>
+
+  <!-- Evita el destello de tema equivocado: se aplica antes del primer pintado. -->
+  <script>
+    try {
+      var t = localStorage.getItem('incasa_tema');
+      if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+      document.documentElement.dataset.tema = t;
+    } catch (e) { /* modo privado: se queda en claro */ }
+  </script>
+</head>
+<body>
+
+  <main class="acceso">
+
+    <!-- ================= COLUMNA DE MARCA ================= -->
+    <section class="acceso__marca">
+
+      <!-- Logotipo oficial. El JPG ya contiene el nombre de la empresa, así
+           que al lado sólo se compone el nombre del sistema. -->
+      <div class="marca">
+        <img class="marca__logo marca__logo--lg" src="/logo-incasa.jpg"
+             alt="INCASA · Industria Centroamericana, S.A." width="76" height="76">
+        <span class="marca__texto">
+          <span class="marca__sistema">Sistema de Pesaje</span>
+          <span class="marca__bajada">Planta Nicaragua</span>
+        </span>
+      </div>
+
+      <div>
+        <p class="rotulo" style="color: var(--inv-texto-2)">Sistema de pesaje · Nicaragua</p>
+        <h1 class="acceso__lema">Cada rollo<em>pesado y certificado</em></h1>
+        <p class="acceso__nota">
+          Control de peso bruto, tara y neto de bobinas de alambrón y producto
+          semielaborado, con lectura directa desde la báscula de planta.
+        </p>
+
+        <ul class="acceso__puntos">
+          <li style="--i:0"><i data-icono="scale"></i> Lectura en vivo del indicador Hiweight X10</li>
+          <li style="--i:1"><i data-icono="file-check"></i> Certificado de Pesaje en PDF por cada pesada</li>
+          <li style="--i:2"><i data-icono="disc-3"></i> Trazabilidad por rollo y orden de trabajo</li>
+          <li style="--i:3"><i data-icono="shield-check"></i> Historial y reportes de producción exportables</li>
+        </ul>
+      </div>
+
+      <dl class="acceso__placa">
+        <div><dt>Modelo</dt><dd>Hiweight X10</dd></div>
+        <div><dt>Capacidad</dt><dd>4,600 kg</dd></div>
+        <div><dt>División</dt><dd>0.5 kg</dd></div>
+        <div><dt>Unidad</dt><dd>Kilogramos</dd></div>
+      </dl>
+    </section>
+
+    <!-- ================= PANEL DE FORMULARIOS ================= -->
+    <section class="acceso__panel">
+
+      <div class="tema acceso__tema" role="group" aria-label="Tema de la interfaz">
+        <button type="button" data-tema-btn="claro" aria-pressed="true" title="Tema claro">
+          <i data-icono="sun"></i>
+        </button>
+        <button type="button" data-tema-btn="oscuro" aria-pressed="false" title="Tema oscuro">
+          <i data-icono="moon"></i>
+        </button>
+      </div>
+
+      <div class="acceso__caja">
+
+        <p class="rotulo">Turno activo</p>
+        <h2 class="acceso__titulo" id="acceso-titulo">Iniciar sesión</h2>
+        <p class="acceso__sub" id="acceso-sub">Identifícate para abrir la terminal de pesaje.</p>
+
+        <!-- Pestañas -->
+        <div class="pestanas" id="pestanas" data-activa="sesion" role="tablist">
+          <button type="button" role="tab" id="tab-sesion"
+                  aria-selected="true" aria-controls="forma-acceso" data-panel="sesion">
+            Iniciar sesión
+          </button>
+          <button type="button" role="tab" id="tab-registro"
+                  aria-selected="false" aria-controls="forma-registro" data-panel="registro">
+            Crear cuenta
+          </button>
+        </div>
+
+        <!-- ---------- INICIAR SESIÓN ---------- -->
+        <form class="acceso__forma" id="forma-acceso" role="tabpanel"
+              aria-labelledby="tab-sesion" novalidate>
+
+          <div class="rejilla rejilla--1">
+            <div class="campo">
+              <label for="usuario">Usuario</label>
+              <div class="campo__control">
+                <i data-icono="user"></i>
+                <input id="usuario" name="usuario" type="text" autocomplete="username"
+                       placeholder="operario.turno-a" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="clave">Contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="clave" name="clave" type="password" autocomplete="current-password"
+                       placeholder="••••••••" required>
+                <button type="button" class="campo__ojo" data-ojo="clave"
+                        aria-label="Mostrar contraseña">
+                  <i data-icono="eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="bascula">Báscula</label>
+              <select id="bascula" name="bascula"></select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--primario btn--bloque" style="margin-top:24px">
+            <i data-icono="log-in"></i> Ingresar
+          </button>
+
+          <p class="acceso__cambio">
+            ¿Todavía no tienes cuenta?
+            <button type="button" data-ir-panel="registro">Regístrate aquí</button>
+          </p>
+
+          <p class="nota" style="margin-top:22px">
+            <i data-icono="info"></i>
+            <span>
+              <b>Modo pruebas.</b> Cualquier usuario y contraseña abren el panel.
+              La autenticación real se conecta en <code>js/api.js</code>.
+            </span>
+          </p>
+        </form>
+
+        <!-- ---------- CREAR CUENTA ---------- -->
+        <form class="acceso__forma" id="forma-registro" role="tabpanel"
+              aria-labelledby="tab-registro" novalidate hidden>
+
+          <div class="rejilla rejilla--1">
+            <div class="campo">
+              <label for="r-nombre">Nombre completo</label>
+              <div class="campo__control">
+                <i data-icono="id-card"></i>
+                <input id="r-nombre" name="nombre" type="text" autocomplete="name"
+                       placeholder="Ana Castillo" required>
+              </div>
+            </div>
+
+            <div class="rejilla rejilla--2" style="gap:16px">
+              <div class="campo">
+                <label for="r-usuario">Usuario</label>
+                <div class="campo__control">
+                  <i data-icono="user"></i>
+                  <input id="r-usuario" name="usuario" type="text" autocomplete="username"
+                         placeholder="acastillo" required>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label for="r-rol">Rol</label>
+                <select id="r-rol" name="rol">
+                  <option>Operario de báscula</option>
+                  <option>Supervisor de planta</option>
+                  <option>Control de calidad</option>
+                  <option>Administrador</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="r-correo">Correo corporativo</label>
+              <div class="campo__control">
+                <i data-icono="mail"></i>
+                <input id="r-correo" name="correo" type="email" autocomplete="email"
+                       placeholder="acastillo@incasa.com.ni" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="r-clave">Contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="r-clave" name="clave" type="password" autocomplete="new-password"
+                       placeholder="Mínimo 8 caracteres" required>
+                <button type="button" class="campo__ojo" data-ojo="r-clave"
+                        aria-label="Mostrar contraseña">
+                  <i data-icono="eye"></i>
+                </button>
+              </div>
+
+              <div class="fuerza" id="fuerza-clave" data-nivel="0">
+                <div class="fuerza__pista" aria-hidden="true">
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                </div>
+                <small id="fuerza-texto">Usa 8 o más caracteres, con números y mayúsculas.</small>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="r-repetir">Repetir contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="r-repetir" name="repetir" type="password" autocomplete="new-password"
+                       placeholder="••••••••" required>
+              </div>
+            </div>
+
+            <div class="rejilla rejilla--2" style="gap:16px">
+              <div class="campo">
+                <label for="r-bascula">Báscula asignada</label>
+                <select id="r-bascula" name="bascula"></select>
+              </div>
+
+              <div class="campo">
+                <label for="r-planta">Código de planta</label>
+                <div class="campo__control">
+                  <i data-icono="key-round"></i>
+                  <input id="r-planta" name="codigoPlanta" type="text"
+                         placeholder="INCASA-2026" required>
+                </div>
+              </div>
+            </div>
+
+            <label class="casilla">
+              <input type="checkbox" id="r-terminos" required>
+              <span>
+                Confirmo que los datos son correctos y acepto las normas de uso del
+                sistema de pesaje y el registro de mi actividad para trazabilidad.
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn--primario btn--bloque" style="margin-top:24px">
+            <i data-icono="user-plus"></i> Crear cuenta
+          </button>
+
+          <p class="acceso__cambio">
+            ¿Ya tienes cuenta?
+            <button type="button" data-ir-panel="sesion">Inicia sesión</button>
+          </p>
+
+          <p class="nota" style="margin-top:22px">
+            <i data-icono="shield-check"></i>
+            <span>
+              El <b>código de planta</b> lo entrega el administrador y evita altas
+              desde fuera de la red industrial. En la demo es <code>INCASA-2026</code>.
+            </span>
+          </p>
+        </form>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div class="avisos" id="avisos" aria-live="polite"></div>
+  <div id="modales"></div>
+
+  <script type="module" src="/js/auth.js"></script>
+</body>
+</html>

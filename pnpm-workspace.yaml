@@ -1,0 +1,3 @@
+# core-js sólo imprime un mensaje de patrocinio en su postinstall.
+allowBuilds:
+  core-js: false

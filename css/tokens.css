@@ -1,0 +1,208 @@
+/* ============================================================================
+   INCASA · tokens.css
+   ---------------------------------------------------------------------------
+   Sistema de diseño. Dos capas:
+
+     1. RAMPAS  — colores crudos de la marca. No cambian con el tema.
+     2. ROLES   — qué significa cada color (fondo, superficie, borde…). Estos
+                  SÍ cambian con el tema, y son los únicos que deben usar los
+                  componentes.
+
+   ── PALETA CORPORATIVA ────────────────────────────────────────────────────
+   Tomada de la identidad de la fachada de INCASA y del logotipo oficial
+   (`public/logo-incasa.jpg`, cuyo fondo real es #48555D, muestreado del
+   archivo). Toda la interfaz gira alrededor de estos cuatro grupos:
+
+     · GRIS PIZARRA  #2D3539 · #3F4A50 · #48555D
+       Estructura: barra lateral, cabeceras y tarjetas de alto contraste.
+
+     · VERDE INCASA  #008744 · #1E7E34
+       Acción: botones principales, estados activos y confirmaciones.
+
+     · DORADO/ÁMBAR  #F4B400 · #E69A00
+       Medición: lectura de báscula estabilizada, cifras y alertas.
+
+     · BLANCO Y NIEVE  #FFFFFF · #F8F9FA
+       Lienzo: contraste de texto impecable sin fatiga visual.
+
+   El tema se fija con  <html data-tema="claro|oscuro">  desde js/ui.js.
+   ==========================================================================*/
+
+:root {
+  /* ================= 1 · RAMPAS DE MARCA ================= */
+
+  /* --- Gris pizarra industrial --- */
+  --pz-950: #1a2023;
+  --pz-900: #232b2f;
+  --pz-850: #2d3539;   /* ★ pizarra oscuro corporativo */
+  --pz-800: #363f45;
+  --pz-700: #3f4a50;   /* ★ pizarra medio corporativo */
+  --pz-600: #48555d;   /* ★ fondo exacto del logotipo */
+  --pz-500: #5c6b74;
+  --pz-400: #7b8992;
+  --pz-300: #a3aeb5;
+  --pz-200: #c8d0d5;
+  --pz-100: #e4e8eb;
+  --pz-050: #f1f3f5;
+
+  /* --- Verde institucional INCASA --- */
+  --verde:      #008744;   /* ★ acción principal */
+  --verde-700:  #1e7e34;   /* ★ hover / estado activo */
+  --verde-800:  #145c25;
+  --verde-300:  #4fc17f;
+  --verde-100:  #e3f5eb;
+
+  /* --- Dorado / ámbar de calidad --- */
+  --ambar:      #f4b400;   /* ★ lectura estabilizada */
+  --ambar-700:  #e69a00;   /* ★ hover / borde */
+  --ambar-800:  #a86f00;
+  --ambar-100:  #fdf3da;
+
+  /* --- Blanco y gris nieve --- */
+  --blanco:     #ffffff;
+  --nieve:      #f8f9fa;
+
+  /* --- Rojo de incidencia (fuera de la paleta de marca, sólo para error) --- */
+  --rojo:      #c62828;
+  --rojo-300:  #ef5350;
+  --rojo-100:  #fdeaea;
+
+  /* ================= 2 · TIPOGRAFÍA =================
+     Pensada para leerse de pie, a un metro de la pantalla y con guantes:
+     cuerpo generoso, números monoespaciados y rótulos sin condensar. */
+  --titular: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --cuerpo:  "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dato:    "IBM Plex Mono", "Consolas", ui-monospace, monospace;
+
+  /* ================= 3 · MÉTRICAS ================= */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-full: 999px;
+
+  --sidebar: 262px;
+  --topbar: 72px;
+
+  /* Curvas de animación. Una sola familia para que todo se mueva igual. */
+  --sal-rapido: 140ms;
+  --sal-normal: 240ms;
+  --sal-lento:  420ms;
+  --curva:         cubic-bezier(.22, .61, .36, 1);   /* salida suave */
+  --curva-resorte: cubic-bezier(.34, 1.4, .64, 1);   /* rebote corto y sobrio */
+}
+
+/* ============================================================================
+   TEMA CLARO · predeterminado.
+   El logotipo es blanco sobre pizarra: la interfaz de día parte del gris nieve
+   para que el contraste del texto sea máximo sin llegar al blanco puro de
+   fondo, que cansa la vista en turnos largos.
+   ==========================================================================*/
+:root,
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --fondo:        var(--nieve);
+  --fondo-veta:   rgba(45, 53, 57, .05);
+
+  --superficie:   var(--blanco);
+  --superficie-2: #f4f6f7;
+  --superficie-3: #e9edef;
+  --superficie-tenue: rgba(45, 53, 57, .055);
+
+  --lateral:      linear-gradient(180deg, var(--pz-700) 0%, var(--pz-850) 100%);
+  --barra:        rgba(255, 255, 255, .92);
+
+  --borde:        #dde2e5;
+  --borde-fuerte: #bcc5ca;
+
+  --texto:        var(--pz-850);
+  --texto-2:      #5a666d;
+  --texto-3:      #8b969c;
+
+  --campo-fondo:  var(--blanco);
+  --campo-borde:  #d5dbdf;
+
+  /* La acción es verde INCASA en toda la aplicación. */
+  --accion:       var(--verde);
+  --accion-texto: var(--blanco);
+  --accion-hover: var(--verde-700);
+
+  --sombra:      0 1px 2px rgba(45, 53, 57, .06), 0 10px 26px rgba(45, 53, 57, .07);
+  --sombra-alta: 0 24px 58px rgba(45, 53, 57, .20);
+  --brillo-ambar: 0 0 22px rgba(244, 180, 0, .32);
+  --brillo-verde: 0 0 20px rgba(0, 135, 68, .28);
+
+  --pill-ok:     var(--verde-100);
+  --pill-ambar:  var(--ambar-100);
+  --pill-error:  var(--rojo-100);
+  --pill-info:   #eaeef0;
+  --pill-neutro: var(--superficie-tenue);
+
+  --ok-texto:     var(--verde-800);
+  --ambar-texto:  var(--ambar-800);
+  --error-texto:  var(--rojo);
+  --info-texto:   var(--pz-700);
+}
+
+/* ============================================================================
+   TEMA OSCURO · turnos de noche y salas de control.
+   ==========================================================================*/
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --fondo:        #14191c;
+  --fondo-veta:   rgba(200, 208, 213, .04);
+
+  --superficie:   var(--pz-850);
+  --superficie-2: var(--pz-800);
+  --superficie-3: #414c52;
+  --superficie-tenue: rgba(200, 208, 213, .07);
+
+  --lateral:      linear-gradient(180deg, var(--pz-850) 0%, var(--pz-950) 100%);
+  --barra:        rgba(35, 43, 47, .88);
+
+  --borde:        rgba(200, 208, 213, .15);
+  --borde-fuerte: rgba(200, 208, 213, .3);
+
+  --texto:        var(--nieve);
+  --texto-2:      #a9b4ba;
+  --texto-3:      #7b8992;
+
+  --campo-fondo:  rgba(20, 25, 28, .5);
+  --campo-borde:  rgba(200, 208, 213, .2);
+
+  --accion:       var(--verde);
+  --accion-texto: var(--blanco);
+  --accion-hover: var(--verde-300);
+
+  --sombra:      0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px rgba(0, 0, 0, .34);
+  --sombra-alta: 0 24px 64px rgba(0, 0, 0, .55);
+  --brillo-ambar: 0 0 26px rgba(244, 180, 0, .36);
+  --brillo-verde: 0 0 24px rgba(0, 135, 68, .32);
+
+  --pill-ok:     rgba(0, 135, 68, .2);
+  --pill-ambar:  rgba(244, 180, 0, .16);
+  --pill-error:  rgba(198, 40, 40, .22);
+  --pill-info:   rgba(200, 208, 213, .1);
+  --pill-neutro: var(--superficie-tenue);
+
+  --ok-texto:     #56cf8c;
+  --ambar-texto:  var(--ambar);
+  --error-texto:  #ff8a80;
+  --info-texto:   var(--pz-200);
+}
+
+/* La barra lateral y el cabezal de la báscula son SIEMPRE pizarra oscuro: son
+   «la máquina» dentro de la interfaz y no cambian con el tema. Exponen sus
+   propios roles invertidos. */
+:root {
+  --inv-texto:   #eef1f2;
+  --inv-texto-2: #a6b1b7;
+  --inv-borde:   rgba(200, 208, 213, .16);
+
+  /* Fondo exacto del logotipo: se usa detrás de la imagen para que el tile
+     se funda con la barra lateral en vez de parecer un recorte pegado. */
+  --logo-fondo: var(--pz-600);
+}

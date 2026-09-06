@@ -1,0 +1,226 @@
+/* ============================================================================
+   INCASA · acceso.css
+   Pantalla de entrada: columna de marca + panel con pestañas de
+   «Iniciar sesión» y «Crear cuenta».
+   ==========================================================================*/
+
+.acceso {
+  display: grid;
+  grid-template-columns: 1.02fr .98fr;
+  min-height: 100vh;
+}
+
+/* ============ COLUMNA DE MARCA ============================= */
+
+.acceso__marca {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 48px 54px;
+  color: var(--inv-texto);
+  background:
+    radial-gradient(120% 90% at 15% 0%, var(--pz-700) 0%, transparent 62%),
+    linear-gradient(160deg, var(--pz-850) 0%, var(--pz-950) 100%);
+}
+
+/* Retícula técnica de fondo: un plano de nave industrial. */
+.acceso__marca::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(196, 210, 218, .06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 210, 218, .06) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(90% 70% at 30% 40%, #000 30%, transparent 100%);
+}
+
+/* Resplandor ámbar en la esquina: el único acento de color de la columna. */
+.acceso__marca::after {
+  content: "";
+  position: absolute;
+  right: -150px;
+  bottom: -190px;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 135, 68, .2) 0%, transparent 68%);
+  pointer-events: none;
+}
+
+.acceso__marca > * { position: relative; z-index: 1; }
+.acceso__marca .marca__sistema { color: #fff; font-size: 24px; }
+.acceso__marca .marca__bajada { color: var(--inv-texto-2); }
+
+.acceso__lema {
+  max-width: 500px;
+  font-family: var(--titular);
+  font-size: clamp(40px, 4.4vw, 62px);
+  font-weight: 600;
+  line-height: .99;
+  text-transform: uppercase;
+  color: #fff;
+  animation: subir var(--sal-lento) var(--curva) backwards 80ms;
+}
+.acceso__lema em { font-style: normal; display: block; color: var(--verde-300); }
+
+.acceso__nota {
+  margin-top: 20px;
+  max-width: 440px;
+  font-size: 15.5px;
+  color: var(--inv-texto-2);
+  animation: subir var(--sal-lento) var(--curva) backwards 160ms;
+}
+
+.acceso__puntos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 26px;
+}
+.acceso__puntos li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 14.5px;
+  color: var(--inv-texto-2);
+  animation: subir-corto var(--sal-lento) var(--curva) backwards;
+  animation-delay: calc(220ms + var(--i, 0) * 70ms);
+}
+.acceso__puntos svg { width: 19px; height: 19px; flex: none; color: var(--verde-300); }
+
+/* Chapa de datos del equipo. */
+.acceso__placa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--inv-borde);
+}
+.acceso__placa div { min-width: 124px; }
+.acceso__placa dt {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--inv-texto-2);
+}
+.acceso__placa dd { margin-top: 3px; font-family: var(--dato); font-size: 15px; color: #fff; }
+
+/* ============ PANEL DEL FORMULARIO ========================= */
+
+.acceso__panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 44px 34px;
+  background: var(--superficie);
+}
+
+.acceso__tema { position: absolute; top: 22px; right: 24px; }
+
+.acceso__caja {
+  width: 100%;
+  max-width: 430px;
+  animation: subir var(--sal-lento) var(--curva) backwards 120ms;
+}
+
+.acceso__titulo {
+  font-family: var(--titular);
+  font-size: 38px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: 1.05;
+}
+.acceso__sub { margin: 8px 0 26px; color: var(--texto-2); font-size: 15px; }
+
+/* --- Pestañas Sesión / Registro --- */
+.pestanas {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 28px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  background: var(--superficie-tenue);
+  border: 1px solid var(--borde);
+}
+/* Indicador deslizante: una sola pieza que se mueve, no dos fondos que
+   aparecen y desaparecen. */
+.pestanas::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 6px);
+  height: calc(100% - 8px);
+  border-radius: var(--r-sm);
+  background: var(--accion);
+  box-shadow: 0 2px 8px rgba(0, 135, 68, .3);
+  transition: transform var(--sal-normal) var(--curva-resorte);
+}
+.pestanas[data-activa="registro"]::before { transform: translateX(calc(100% + 4px)); }
+
+.pestanas button {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  padding: 10px 8px;
+  border-radius: var(--r-sm);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--texto-2);
+  transition: color var(--sal-normal) var(--curva);
+}
+.pestanas button[aria-selected="true"] { color: var(--accion-texto); }
+
+.acceso__forma[hidden] { display: none; }
+.acceso__forma { animation: subir-corto var(--sal-normal) var(--curva); }
+
+/* Enlace de cambio entre pestañas al pie del formulario. */
+.acceso__cambio {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14.5px;
+  color: var(--texto-2);
+}
+.acceso__cambio button {
+  font-weight: 600;
+  color: var(--info-texto);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.acceso__cambio button:hover { color: var(--accion-hover); }
+
+/* Casilla de términos del registro. */
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 14px;
+  color: var(--texto-2);
+  cursor: pointer;
+  line-height: 1.45;
+}
+.casilla input {
+  width: 20px; height: 20px;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--accion);
+  cursor: pointer;
+}
+
+/* ============ RESPONSIVE =================================== */
+
+@media (max-width: 920px) {
+  .acceso { grid-template-columns: 1fr; }
+  .acceso__marca { padding: 32px 26px; gap: 24px; }
+  .acceso__lema { font-size: clamp(32px, 8vw, 46px); }
+  .acceso__placa, .acceso__puntos { display: none; }
+  .acceso__panel { padding: 34px 22px 50px; }
+}

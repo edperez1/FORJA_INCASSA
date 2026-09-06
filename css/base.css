@@ -1,0 +1,166 @@
+/* ============================================================================
+   INCASA · base.css
+   Reset, tipografía y catálogo de animaciones compartidas.
+
+   NOTA SOBRE TAMAÑOS: el cuerpo base es 16 px y ningún texto informativo baja
+   de 13 px. Esta interfaz se usa de pie, a un metro de la pantalla y a veces
+   con guantes; lo que en una aplicación de oficina sería «demasiado grande»
+   aquí es el mínimo para no equivocar un peso.
+   ==========================================================================*/
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--cuerpo);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--texto);
+  background: var(--fondo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--sal-normal) var(--curva),
+              color      var(--sal-normal) var(--curva);
+}
+
+h1, h2, h3, h4, p, figure, dl, dd { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; }
+a { color: inherit; text-decoration: none; }
+svg { display: block; }
+img { max-width: 100%; }
+
+/* El atributo `hidden` gana a cualquier `display` declarado en una clase.
+   Sin este !important, un panel con `display:flex` seguiría viéndose aunque
+   el JS lo marque como oculto: la regla del navegador pesa menos que la clase. */
+[hidden] { display: none !important; }
+
+/* Barras de desplazamiento acordes al tema. */
+* { scrollbar-width: thin; scrollbar-color: var(--borde-fuerte) transparent; }
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--borde-fuerte);
+  border: 3px solid transparent;
+  border-radius: var(--r-full);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--pz-500); background-clip: content-box; }
+
+/* ============ TIPOS UTILITARIOS ============ */
+
+/* Rótulo pequeño. Va en la fuente de cuerpo, NO condensada: en condensada y
+   en mayúsculas se lee mal desde lejos, que es justo el caso de uso. */
+.rotulo {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+
+.num {
+  font-family: var(--dato);
+  font-variant-numeric: tabular-nums;
+}
+
+.titular {
+  font-family: var(--titular);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  line-height: 1.05;
+}
+
+/* ============ ACCESIBILIDAD ============ */
+
+:focus-visible {
+  outline: 3px solid var(--accion);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* ============ ANIMACIONES COMPARTIDAS ============
+   Un solo catálogo para toda la aplicación: si una transición no está aquí,
+   probablemente no debería existir. */
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes subir-corto {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes escalar {
+  from { opacity: 0; transform: translateY(16px) scale(.975); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes latido {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  70%  { box-shadow: 0 0 0 7px transparent; opacity: .72; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+
+/* Barrido de brillo para los esqueletos de carga. */
+@keyframes barrido {
+  from { background-position: -180% 0; }
+  to   { background-position: 180% 0; }
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* Pulso ámbar: alerta de la medición (sobrecarga). */
+@keyframes pulso-ambar {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 180, 0, .45); }
+  50%      { box-shadow: 0 0 0 10px rgba(244, 180, 0, 0); }
+}
+
+/* Pulso verde: la acción está disponible (tecla Capturar habilitada). */
+@keyframes pulso-verde {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 135, 68, .5); }
+  50%      { box-shadow: 0 0 0 10px rgba(0, 135, 68, 0); }
+}
+
+/* Entrada escalonada de filas. El retardo lo inyecta el JS con --i, así que
+   basta una sola regla para toda la tabla. */
+.entra-fila {
+  animation: subir-corto var(--sal-normal) var(--curva) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+.entra { animation: subir var(--sal-lento) var(--curva) backwards; }
+.entra-suave { animation: aparecer var(--sal-lento) var(--curva) backwards; }
+
+/* ============ MOVIMIENTO REDUCIDO ============
+   Se respeta la preferencia del sistema: hay operarios que la activan por
+   fatiga visual en turnos largos. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
