@@ -1,0 +1,15 @@
+# Pruebas: H2 en memoria imitando a SQL Server. Flyway aplica las mismas
+# migraciones que en planta, así que el esquema probado es el real.
+spring:
+  datasource:
+    url: jdbc:h2:mem:incasa;MODE=MSSQLServer;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
+incasa:
+  bascula:
+    simular: false
+
+logging:
+  level:
+    ni.com.incasa.pesaje: INFO

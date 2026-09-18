@@ -1,113 +1,269 @@
 # INCASA · Sistema de Pesaje
 
-Frontend del sistema de pesaje industrial de **INCASA (Industria Centroamericana,
-S.A.)**, Nicaragua. Controla el pesaje de **bobinas de alambrón** y **producto
-semielaborado**, emite el **Certificado de Pesaje** de cada pesada y mantiene el
-historial y los reportes gerenciales de producción.
+Sistema de pesaje industrial de **INCASA (Industria Centroamericana, S.A.)**,
+Nicaragua. Controla la **producción** de punta a punta: la bobina que entra a un
+área de proceso, lo que sale de ella y la **merma** entre ambos, con lectura
+directa desde la báscula, **Certificado de Pesaje** por cada pesada, roles,
+auditoría y reportes gerenciales.
 
-JavaScript moderno (módulos ES) sobre **Vite**, sin framework de UI.
+| Parte     | Tecnología                                              | Dónde        |
+|-----------|---------------------------------------------------------|--------------|
+| Frontend  | JavaScript (módulos ES) sobre **Vite**, sin framework   | `front/`     |
+| Backend   | **Spring Boot 4 / Java 21**, JPA, Flyway                | `backend/`   |
+| Base      | **SQL Server 2022** (`incasa_pesaje`)                   | —            |
+
+La puesta en marcha del backend y de SQL Server está en
+[`backend/README.md`](backend/README.md).
 
 ---
 
 ## Índice
 
-1. [Arrancar el entorno](#1--arrancar-el-entorno-de-desarrollo)
+1. [Arrancar](#1--arrancar)
 2. [Estructura de carpetas](#2--estructura-de-carpetas)
-3. [El logotipo · `public/logo-incasa.jpg`](#3--el-logotipo--publiclogo-incasajpg)
-4. [Paleta corporativa](#4--paleta-corporativa)
-5. [Fuente de lectura: modo real, simulador y contingencia](#5--fuente-de-lectura-modo-real-simulador-y-contingencia)
-6. [Desactivar o eliminar el simulador en producción](#6--desactivar-o-eliminar-el-simulador-en-producción)
-7. [Contratos REST y WebSocket · `js/api.js`](#7--contratos-rest-y-websocket--jsapijs)
-8. [Conectar con el backend en Java · paso a paso](#8--conectar-con-el-backend-en-java--paso-a-paso)
-9. [Referencia de endpoints](#9--referencia-de-endpoints)
-10. [Documentos generados](#10--documentos-generados)
-11. [Reglas del dominio](#11--reglas-del-dominio)
+3. [Cuentas y roles](#3--cuentas-y-roles)
+4. [El flujo de una producción](#4--el-flujo-de-una-producción)
+5. [Fuente de lectura: báscula, simulador y contingencia](#5--fuente-de-lectura-báscula-simulador-y-contingencia)
+6. [Contratos con el backend · `js/api.js`](#6--contratos-con-el-backend--jsapijs)
+7. [Documentos generados](#7--documentos-generados)
+8. [El logotipo](#8--el-logotipo--publiclogo-incasajpg)
+9. [Paleta corporativa](#9--paleta-corporativa)
+10. [Reglas del dominio](#10--reglas-del-dominio)
 
 ---
 
-## 1 · Arrancar el entorno de desarrollo
+## 1 · Arrancar
 
-Requisitos: **Node 18 o superior** y **pnpm**.
+Requisitos: **Node 18+** con **pnpm**, **Java 21+** con **Maven**, y el backend
+configurado según [`backend/README.md`](backend/README.md).
 
-```bash
-# 1. Instalar dependencias
+```powershell
+# 1 · Backend (http://localhost:8080). La clave de la base, en variable de entorno.
+$env:INCASA_DB_CLAVE = '…'
+cd backend; mvn spring-boot:run
+
+# 2 · Frontend (http://localhost:5173), en otra terminal
+cd front
 pnpm install
-
-# 2. Levantar el servidor de desarrollo
 pnpm dev
 ```
 
-Abre **http://localhost:5173**. Vite recarga en caliente al guardar cualquier
-archivo.
+El frontend **siempre** habla con el backend: el proxy de `vite.config.js`
+reenvía `/api` y `/ws` al 8080. Ya no existe un modo de demostración con datos
+inventados.
 
-| Comando        | Qué hace                                                       |
-|----------------|----------------------------------------------------------------|
-| `pnpm dev`     | Servidor de desarrollo con recarga en caliente (puerto 5173)    |
-| `pnpm build`   | Compila a `dist/`, listo para servir desde el JAR de Java       |
-| `pnpm preview` | Sirve `dist/` para comprobar la compilación antes de desplegar  |
+Los comandos de `pnpm` se ejecutan dentro de `front/`:
 
-**Credenciales de la demo:** en modo simulación cualquier usuario y contraseña
-abren el panel. Para probar el alta de cuenta, el código de planta es
-`INCASA-2026`.
+| Comando           | Qué hace                                                     |
+|-------------------|--------------------------------------------------------------|
+| `pnpm dev`        | Servidor de desarrollo con recarga en caliente (5173)         |
+| `pnpm build`      | Compila a `front/dist/`                                       |
+| `pnpm build:java` | Compila dentro de `backend/src/main/resources/static`, para servir todo desde el JAR |
+| `pnpm preview`    | Sirve `dist/` para revisar la compilación                     |
+
+**Primer arranque:** con la base vacía, la pantalla de acceso muestra la
+**configuración inicial**, que crea la cuenta del **propietario** con el código
+de instalación (`INCASA_CODIGO_INSTALACION`, por defecto `INCASA-2026`).
 
 ### Dependencias y por qué están
 
 | Paquete               | Para qué                                                     |
 |-----------------------|--------------------------------------------------------------|
 | `vite`                | Servidor de desarrollo, empaquetado y proxy al backend        |
-| `lucide`              | Iconografía. Se importan sólo los ~45 iconos usados           |
-| `jspdf` + `autotable` | Certificado, ticket de 80 mm y reporte en PDF real            |
+| `lucide`              | Iconografía. Se importan sólo los iconos usados               |
+| `jspdf` + `autotable` | Certificado, ticket de 80 mm y reporte en PDF                 |
 | `@fontsource/*`       | Tipografías autoalojadas: la planta puede quedarse sin internet |
-
-`jspdf` vive en su propio módulo con `import()` dinámico, así que la terminal
-sólo descarga esos ~300 kB si alguien exporta de verdad.
 
 ---
 
 ## 2 · Estructura de carpetas
 
 ```
-INCASA-Sistema-de-Pesaje/
+FORJA_INCASSA/
+├── README.md                   este documento
+├── backend/                    Spring Boot · ver backend/README.md
 │
-├── index.html                  Acceso: iniciar sesión + crear cuenta
-├── app.html                    Panel: pesaje, historial, reportes y perfil
-├── vite.config.js              Multipágina + PROXY hacia el backend de Java
-├── package.json
-│
-├── public/                     Servido tal cual, sin procesar por Vite
-│   └── logo-incasa.jpg         ★ LOGOTIPO OFICIAL (ver sección 3)
-│
-├── css/
-│   ├── tokens.css              Paleta corporativa y los dos temas
-│   ├── base.css                Reset, tipografía y catálogo de animaciones
-│   ├── components.css          Botones, campos, tarjetas, tablas, modales
-│   ├── acceso.css              Sólo la pantalla de acceso
-│   └── panel.css               Sólo el panel (incluye la vista del certificado)
-│
-└── js/
-    ├── api.js                  ★★★ CAPA DE INTEGRACIÓN — todos los contratos
-    ├── mock-data.js            10 registros de prueba (ELIMINAR en producción)
-    ├── bascula.js              Simulador del indicador (ELIMINAR en producción)
+└── front/                      todo el frontend
+    ├── index.html              Acceso: iniciar sesión · configuración inicial
+    ├── app.html                Panel: todas las vistas
+    ├── vite.config.js          Multipágina + proxy hacia el backend
+    ├── package.json            scripts: dev, build, build:java, preview
     │
-    ├── ui.js                   Tema, avisos, formato, modales, sesión
-    ├── iconos.js               Puente con Lucide
+    ├── public/logo-incasa.jpg  ★ LOGOTIPO OFICIAL (sección 8)
     │
-    ├── reportes.js             CSV + orquestación de los PDF
-    ├── reportes-pdf.js         Certificado, ticket y reporte con jsPDF
-    ├── reportes-columnas.js    Columnas compartidas por CSV y PDF
-    ├── certificado-modal.js    Vista previa del certificado antes de descargar
-    ├── pesajes-modales.js      Ver detalle · Editar · Eliminar
+    ├── css/
+    │   ├── tokens.css          Paleta corporativa y los dos temas
+    │   ├── base.css            Reset, tipografía y animaciones
+    │   ├── components.css      Botones, campos, tarjetas, tablas, modales
+    │   ├── acceso.css          Sólo la pantalla de acceso
+    │   ├── panel.css           Sólo el panel
+    │   └── admin.css           Sólo Administración
     │
-    ├── auth.js                 Punto de entrada de index.html
-    └── app.js                  Punto de entrada de app.html
+    └── js/
+        ├── api.js                  ★★★ ÚNICO archivo con red: todos los contratos
+        ├── estado.js               Estado compartido y aviso de cambios entre vistas
+        ├── ui.js                   Tema, avisos, formato, modales, sesión, permisos
+        ├── iconos.js               Puente con Lucide
+        │
+        ├── auth.js                 Entrada de index.html
+        ├── app.js                  Entrada de app.html: arranque, permisos, rutas, perfil
+        ├── vista-pesaje.js         Pesaje en vivo
+        ├── vista-producciones.js   Producciones
+        ├── vista-historial.js      Historial de pesajes
+        ├── vista-reportes.js       Reportes gerenciales
+        ├── vista-admin.js          Administración: usuarios, catálogos, báscula, auditoría
+        │
+        ├── produccion-modales.js   Abrir · corregir · ver · terminar · anular producción
+        ├── pesajes-modales.js      Ver · corregir · anular pesaje
+        ├── certificado-modal.js    Vista previa del certificado
+        ├── reportes.js             CSV + orquestación de los PDF
+        ├── reportes-pdf.js         Certificado, ticket y reporte con jsPDF
+        ├── reportes-columnas.js    Columnas compartidas por CSV y PDF
+        └── bascula.js              Simulador del indicador (sólo formación)
 ```
 
-**Regla de oro:** ningún archivo llama a `fetch` salvo `js/api.js`. Todo lo demás
-usa `API.*`. Por eso conectar el backend no toca las vistas.
+**Regla de oro:** ningún archivo llama a `fetch` salvo `front/js/api.js`.
 
 ---
 
-## 3 · El logotipo · `public/logo-incasa.jpg`
+## 3 · Cuentas y roles
+
+No hay registro público. La primera cuenta es la del **propietario**, creada en
+la configuración inicial; las demás las crean el propietario o los
+administradores en **Administración**.
+
+**Los permisos de cada rol los decide el propietario** en
+**Administración → Roles y permisos** (tabla `rol_permiso`). Valores de partida:
+
+| Permiso                          | Propietario | Admin | Supervisor | Operario | Calidad |
+|----------------------------------|:-:|:-:|:-:|:-:|:-:|
+| Abrir producciones               | ✔ | ✔ |   |   |   |
+| Pesar                            | ✔ |   | ✔ | ✔ |   |
+| Terminar producciones            | ✔ |   | ✔ | ✔ |   |
+| Corregir y anular                | ✔ |   | ✔ |   |   |
+| Consultar                        | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Gestionar usuarios y catálogos   | ✔ | ✔ |   |   |   |
+| Ver auditoría                    | ✔ | ✔ |   |   |   |
+| Gestionar administradores 🔒     | ✔ |   |   |   |   |
+| Gestionar permisos 🔒            | ✔ |   |   |   |   |
+
+- 🔒 = exclusivo del propietario: no se puede asignar a otro rol.
+- El propietario tiene todos los permisos, siempre; su columna no se edita.
+- Un cambio aplica en el acto a las sesiones abiertas de ese rol: el backend
+  relee los permisos en cada petición.
+- El propietario es **único** y nadie más lo gestiona.
+- Nadie cambia su propio rol ni se desactiva a sí mismo.
+- Desactivar una cuenta o restablecer su clave **cierra sus sesiones** al instante.
+- El menú y los botones se ocultan según `usuario.permisos`, pero **el backend
+  exige el permiso en cada petición**: ocultar es comodidad, no seguridad.
+
+---
+
+## 4 · El flujo de una producción
+
+```
+1 · Abrir producción     producto, materia, cantidad a producir + unidad,
+                         área de PROCESO → área de DESTINO
+2 · Pesaje de ENTRADA    la bobina que entra (código de bobina obligatorio)
+3 · Pesaje de SALIDA     lo producido: peso + CANTIDAD producida en la
+                         unidad de la producción (código de lote opcional)
+4 · Terminar             → merma = kg entrada − kg salida
+                         → rendimiento = salida / entrada
+                         → producido = suma de las cantidades de salida
+```
+
+Ejemplo: la bobina BOB-0001 entra con 2,014.5 kg; sale 1,978 kg de producto que
+son 40,000 clavos. La producción pedía 50,000 und → avance 80 %.
+
+- Si la unidad de la producción es **kg**, la cantidad de una salida es su
+  propio neto y no hace falta escribirla.
+- La cantidad no es un peso certificado: un supervisor la puede corregir.
+
+### Reglas de peso y de cierre
+
+- **La salida nunca pesa más que la entrada.** No se pesa una salida sin haber
+  pesado la bobina, y la salida acumulada no puede pasar del peso que entró.
+  Tampoco se puede anular una entrada si con ello la salida quedaría mayor.
+- **Cierre automático.** La salida que alcanza la cantidad pedida termina la
+  producción sola. Si se pasó de lo pedido, el **exceso** queda anotado en la
+  producción y en la auditoría, y el operario lo ve en un aviso antes del
+  certificado.
+- **Merma máxima de 2 %** (configurable con `INCASA_MERMA_MAXIMA`). Con más
+  merma la producción no se cierra sola ni la cierra un operario: se avisa y
+  sólo alguien con permiso de **Corregir y anular** la cierra, justificándolo.
+  Queda en la auditoría como *cierre fuera de tolerancia*.
+
+- Los kg de entrada y salida **no se teclean**: se suman de los pesajes vigentes.
+- Normalmente hay una bobina por producción, pero si se usan varias se
+  registran varias entradas y queda trazado qué bobinas se consumieron.
+- Una producción terminada **no admite más pesajes**.
+- Una producción sólo se anula **sin pesajes vigentes**, y con motivo.
+
+---
+
+## 5 · Fuente de lectura: báscula, simulador y contingencia
+
+**Pesaje en vivo** abre el WebSocket con la báscula activa al cargar. El panel
+«Fuente de lectura» tiene cuatro estados (`VistaPesaje.fuente`):
+
+| Estado       | Qué significa                                  | Cómo se llega                      |
+|--------------|------------------------------------------------|------------------------------------|
+| `esperando`  | Sin señal del indicador                         | Al cargar o si se corta la red      |
+| `conectada`  | El WebSocket entrega tramas (~10 por segundo)   | Automático                          |
+| `simulador`  | Pesos generados en el navegador                 | «Activar Simulación de Báscula»     |
+| `manual`     | Contingencia: el operario teclea el peso        | «Ingreso Manual / Contingencia»     |
+
+- Cada pesaje guarda **`origenLectura`**: una auditoría distingue una lectura
+  certificada de una tecleada en contingencia.
+- **El backend rechaza los pesos del simulador** salvo que planta lo habilite
+  (`INCASA_ACEPTAR_SIMULADOR=true`), para que un certificado nunca salga de un
+  peso inventado. El botón sigue ahí para formar operarios.
+- Mientras el backend no tenga el lector del puerto serie, emite un ciclo de
+  pesadas sintéticas (`INCASA_BASCULA_SIMULAR=true`): así se prueba todo el flujo
+  sin la báscula delante.
+
+---
+
+## 6 · Contratos con el backend · `js/api.js`
+
+**Todos los contratos viven en `js/api.js`**, documentados sobre cada método, y
+el backend los prueba de punta a punta en `ContratoApiTest`.
+
+```
+js/api.js
+├── 1 · ACCESO          estado, configurar, login, logout
+├── 2 · BÁSCULA         conectarBascula (WebSocket + reconexión)
+├── 3 · PRODUCCIONES    listar, obtener, abrir, corregir, terminar, anular
+├── 4 · PESAJES         guardar, listar, obtener, corregir, anular + PDF
+├── 5 · CATÁLOGOS       catálogos, crear/editar elemento, editar báscula
+├── 6 · CUENTAS         perfil propio y gestión de usuarios
+└── 7 · AUDITORÍA
+```
+
+Todo error llega como `{ "error": "CODIGO", "mensaje": "…", "campos": {…} }`.
+`API.pedir()` lo convierte en un `Error` con `mensaje`, `codigo` y `campos`, y
+`marcarCampos()` (js/ui.js) pinta los errores de validación bajo cada campo.
+Un `401` fuera de `/auth/*` expulsa a la pantalla de acceso.
+
+---
+
+## 7 · Documentos generados
+
+| Documento              | Formato          | Dónde se genera   | Desde dónde                         |
+|------------------------|------------------|-------------------|-------------------------------------|
+| Certificado de Pesaje  | PDF A4 vertical  | `reportes-pdf.js` | Al guardar · botón de cada fila     |
+| Ticket                 | PDF 80 mm        | `reportes-pdf.js` | Vista previa del certificado        |
+| Reporte de producción  | PDF A4 apaisado  | `reportes-pdf.js` | Historial y Reportes                |
+| Listado                | CSV (`;`, BOM)   | `ui.js`           | Historial y Reportes                |
+
+**Los PDF se piden primero al backend**, que hoy responde `501`; entonces el
+navegador arma el documento con jsPDF. Si algún día el certificado debe llevar
+firma o numeración fiscal del servidor, basta con implementar los tres
+endpoints en Java: el frontend no cambia.
+
+---
+
+## 8 · El logotipo · `public/logo-incasa.jpg`
 
 El logotipo oficial vive en **`public/logo-incasa.jpg`** y se carga por ruta
 absoluta (`/logo-incasa.jpg`). **Para actualizarlo basta con reemplazar ese
@@ -154,7 +310,7 @@ un error en plena jornada.
 
 ---
 
-## 4 · Paleta corporativa
+## 9 · Paleta corporativa
 
 Toda la paleta está en `css/tokens.css`, en dos capas: **rampas** (colores crudos
 de la marca) y **roles** (qué significa cada color). Los componentes sólo usan
@@ -177,392 +333,32 @@ Dos criterios que conviene respetar al ampliar la interfaz:
 
 ---
 
-## 5 · Fuente de lectura: modo real, simulador y contingencia
-
-La pantalla **Pesaje en vivo** arranca **siempre en modo real**, esperando al
-indicador. Ni el simulador ni el ingreso manual se activan solos: son decisiones
-explícitas del operario, para que nadie confunda un peso inventado con una
-lectura certificada.
-
-El panel «Fuente de lectura» del cabezal tiene cuatro estados
-(`App.fuente` en `js/app.js`):
-
-| Estado       | Qué significa                                         | Cómo se llega                        |
-|--------------|-------------------------------------------------------|--------------------------------------|
-| `esperando`  | **Estado inicial.** «Esperando conexión con indicador Hiweight X10 / BASC-01» | Al cargar la vista |
-| `conectada`  | El WebSocket entrega tramas reales                     | Automático con `API.MODO = 'produccion'` |
-| `simulador`  | Pesos generados por el sistema                         | Botón **«Activar Simulación de Báscula»** |
-| `manual`     | Contingencia: el peso lo teclea el operario            | Botón **«Ingreso Manual / Contingencia»** |
-
-Detalles que importan:
-
-- Con `esperando` o `manual`, las teclas CERO/TARA/BRUTO quedan **deshabilitadas**
-  y el visor muestra `----.-`: no hay nada que tarar.
-- El simulador **se detiene de verdad** al desactivarlo (`enlace.cerrar()`), no
-  sólo visualmente.
-- Cada pesaje guarda el campo **`origenLectura`** (`conectada` | `simulador` |
-  `manual`). Una auditoría puede así distinguir una lectura certificada de una
-  tecleada en contingencia. **El backend debería persistir este campo.**
-
----
-
-## 6 · Desactivar o eliminar el simulador en producción
-
-El simulador vive en **`js/bascula.js`** y es el único archivo que genera pesos
-falsos. Hay dos niveles, según lo definitivo que quieras que sea.
-
-### Nivel 1 · Desactivarlo (recomendado durante la puesta en marcha)
-
-Crea un archivo `.env` en la raíz del proyecto:
-
-```bash
-VITE_API_MODO=produccion
-```
-
-Con eso:
-
-- `API.conectarBascula()` abre el **WebSocket real** en lugar del simulador.
-- La vista arranca conectando con el indicador y pasa a `conectada` en cuanto
-  llega la primera trama.
-- El botón «Activar Simulación de Báscula» **sigue existiendo**, lo que resulta
-  útil para formar operarios sin mover material real.
-
-### Nivel 2 · Eliminarlo por completo
-
-Cuando el sistema esté en producción estable y no quieras que exista la
-posibilidad de generar pesos falsos:
-
-1. **Borra los archivos de simulación:**
-   ```bash
-   rm js/bascula.js js/mock-data.js
-   ```
-
-2. **Quita sus dos `import` de la cabecera de `js/api.js`:**
-   ```js
-   import { MockData } from './mock-data.js';   // ← borrar
-   import { Bascula } from './bascula.js';      // ← borrar
-   ```
-
-3. **Quita el import y el uso en `js/app.js`:**
-   ```js
-   import { Bascula } from './bascula.js';      // ← borrar
-   ```
-   …y elimina el método `alternarSimulador()` junto con la llamada
-   `Bascula.retirarCarga()` de `guardar()`.
-
-4. **Quita el botón del HTML** en `app.html`:
-   ```html
-   <button type="button" class="btn btn--ambar btn--sm" id="btn-simular">…</button>
-   ```
-   …y su escucha en `acciones()` de `js/app.js`.
-
-5. **Opcional:** conserva el ingreso manual. En una planta real es la única
-   salida cuando el indicador se avería a mitad de turno, y queda registrado
-   como `origenLectura: 'manual'`.
-
-> Tras el paso 2, todas las ramas `if (!this.enProduccion)` de `js/api.js`
-> quedan muertas y pueden borrarse; cada método se reduce a su llamada `fetch`.
-
----
-
-## 7 · Contratos REST y WebSocket · `js/api.js`
-
-**Todos los contratos JSON viven en `js/api.js`**, documentados en el comentario
-que precede a cada método. No hay contratos repartidos por otros archivos.
-
-```
-js/api.js
-├── ⚙️  CONFIGURACIÓN        ← MODO, BASE, WS, cabeceras, pedir()
-├── 🔐  1 · AUTENTICACIÓN    ← login, registro, logout, miPerfil
-├── ⚖️  2 · BÁSCULA          ← conectarBascula (WebSocket + reconexión)
-├── 📦  3 · PESAJES          ← guardar, listar, obtener, actualizar, eliminar
-├── 📄  4 · CERTIFICADO      ← certificadoPesaje, ticketPesaje, reportePDF
-├── 🗂️  5 · CATÁLOGOS        ← materiales, básculas
-└── 👤  6 · PERFIL           ← guardarPerfil, cambiarClave
-```
-
-### La configuración, en tres líneas
-
-```js
-MODO: env('VITE_API_MODO', 'simulacion'),   // 'simulacion' | 'produccion'
-BASE: env('VITE_API_BASE', '/api'),         // raíz REST
-WS:   env('VITE_WS_BASE', '/ws/bascula'),   // WebSocket de la báscula
-```
-
-### Cuerpo de error estándar
-
-`API.pedir()` espera que **todos** los errores tengan esta forma. En Spring Boot
-se consigue con un `@ControllerAdvice` + `@ExceptionHandler`:
-
-```json
-{ "error": "CODIGO_MAQUINA", "mensaje": "Texto para el operario" }
-```
-
-Un `401` expulsa al usuario a la pantalla de acceso automáticamente.
-
-### Cómo modificar un endpoint
-
-Abre `js/api.js`, busca el método y edita la cadena de la ruta:
-
-```js
-// Antes
-return this.pedir('/pesajes', { method: 'POST', body: JSON.stringify(pesaje) });
-// Después
-return this.pedir('/pesajes/registrar', { method: 'POST', body: JSON.stringify(pesaje) });
-```
-
-Actualiza también el comentario de arriba para que la documentación no mienta.
-
-### WebSocket de la báscula
-
-```
-ws://localhost:8080/ws/bascula?bascula=BASC-01&token=…
-```
-
-El backend lee el puerto serie del **Hiweight X10** (por ejemplo con
-**jSerialComm**) y reemite ~10 tramas por segundo:
-
-```json
-{
-  "bascula": "BASC-01",
-  "modelo": "Hiweight X10",
-  "peso": 2014.5,
-  "bruto": 2043.0,
-  "tara": 28.5,
-  "unidad": "kg",
-  "estable": true,
-  "modo": "NETO",
-  "sobrecarga": false,
-  "capacidad": 4600.0,
-  "division": 0.5,
-  "ts": "2026-08-31T09:25:11.320Z"
-}
-```
-
-Comandos que el frontend envía por el mismo socket:
-
-```json
-{"comando":"CERO"}   {"comando":"TARA"}
-{"comando":"BRUTO"}  {"comando":"NETO"}
-```
-
-**Reconexión:** ya implementada con espera creciente (1,6 s · 3,2 s · 6,4 s …
-hasta 15 s). Si la red de planta se cae, el operario no tiene que recargar.
-
-**Sin WebSocket:** sirve `GET /api/basculas/{codigo}/lectura` y haz polling cada
-300 ms con el mismo JSON.
-
----
-
-## 8 · Conectar con el backend en Java · paso a paso
-
-Entorno previsto: **Spring Boot en `http://localhost:8080`**.
-
-### Paso 1 · Comprobar el proxy
-
-`vite.config.js` ya reenvía `/api` y `/ws` al puerto 8080:
-
-```js
-server: {
-  proxy: {
-    '/api': { target: 'http://localhost:8080', changeOrigin: true },
-    '/ws':  { target: 'ws://localhost:8080',   ws: true }
-  }
-}
-```
-
-Si tu Spring Boot escucha en otro puerto, cámbialo aquí.
-
-### Paso 2 · Activar el modo producción
-
-Una sola bandera. Crea `.env` en la raíz:
-
-```bash
-VITE_API_MODO=produccion
-```
-
-Cada método deja de usar `MockData` y ejecuta su `fetch`. **No hay que
-descomentar nada**: las llamadas reales ya están escritas.
-
-### Paso 3 · Implementar los endpoints
-
-Lo mínimo para que la aplicación arranque:
-
-1. `POST /api/auth/login` — devuelve `token` + `usuario`
-2. `GET  /api/catalogos/materiales`
-3. `GET  /api/catalogos/basculas`
-4. `GET  /api/pesajes`
-5. `POST /api/pesajes`
-
-El resto puede llegar después: la interfaz avisa del error sin romperse.
-
-### Paso 4 · Publicar el WebSocket
-
-Registra un `WebSocketHandler` en `/ws/bascula` con la trama de la sección 7.
-
-### Paso 5 · Compilar y desplegar dentro del JAR
-
-```bash
-pnpm build
-```
-
-Copia el contenido de `dist/` a `src/main/resources/static/` de tu proyecto
-Spring Boot. El JAR servirá el frontend y la API desde el mismo origen.
-
-### Paso 6 · Retirar el andamiaje
-
-Sigue la [sección 6](#6--desactivar-o-eliminar-el-simulador-en-producción) y,
-además:
-
-- Sustituye `sessionStorage` por una cookie `httpOnly` emitida por el backend
-  (ver `guardarSesion()` en `js/ui.js`).
-- Valida el token al arrancar con `API.miPerfil()` y redirige si responde 401.
-
-### Sobre CORS
-
-`BASE` es `/api`, una **ruta relativa**. En desarrollo el proxy de Vite la
-reenvía a 8080 y, en producción, el JAR sirve los estáticos. En ambos casos es el
-mismo origen: **no hay CORS ni preflight que configurar en Java**.
-
-Si algún día el frontend se despliega en un dominio distinto, pon la URL absoluta
-en `BASE` y añade `@CrossOrigin` (o un `WebMvcConfigurer`) en el backend.
-
----
-
-## 9 · Referencia de endpoints
-
-Raíz: `http://localhost:8080/api`
-
-### Autenticación
-
-| Método | Ruta                 | Uso                                    |
-|--------|----------------------|----------------------------------------|
-| `POST` | `/auth/login`        | Devuelve `token` + objeto `usuario`     |
-| `POST` | `/auth/registro`     | Alta de operario/administrador (201)    |
-| `POST` | `/auth/logout`       | Invalida el token (204)                 |
-| `GET`  | `/usuarios/me`       | Perfil del token actual                 |
-| `PUT`  | `/usuarios/me`       | Nombre, rol, correo, báscula            |
-| `PUT`  | `/usuarios/me/clave` | `{ claveActual, claveNueva }`           |
-
-### Pesajes y documentos
-
-| Método   | Ruta                        | Uso                                        |
-|----------|-----------------------------|--------------------------------------------|
-| `POST`   | `/pesajes`                  | Registra el pesaje (201 con `id`, `folio`)  |
-| `GET`    | `/pesajes`                  | Filtros: `desde`, `hasta`, `tipoMaterial`, `bascula`, `buscar`, `pagina` |
-| `GET`    | `/pesajes/{id}`             | Un pesaje completo                          |
-| `PUT`    | `/pesajes/{id}`             | Edita material, rollo, orden y observaciones |
-| `DELETE` | `/pesajes/{id}`             | Baja del registro (204)                     |
-| `GET`    | `/pesajes/{id}/certificado` | **Certificado de Pesaje** (`application/pdf`) |
-| `GET`    | `/pesajes/{id}/ticket`      | Ticket de 80 mm (`application/pdf`)         |
-| `POST`   | `/reportes/pesajes.pdf`     | Listado del periodo (`application/pdf`)     |
-| `GET`    | `/catalogos/materiales`     | Tipos de material                           |
-| `GET`    | `/catalogos/basculas`       | Básculas de planta                          |
-
-El CSV se genera siempre en el navegador y no necesita backend.
-
-### JSON del pesaje
-
-```json
-{
-  "ordenTrabajo":  "OT-2026-1240",
-  "codigoRollo":   "RA-84512",
-  "tipoMaterial":  "BOBINA_ALAMBRON",
-  "operario":      "Javier López",
-  "operarioId":    12,
-  "pesoBruto":     2043.0,
-  "tara":          28.5,
-  "pesoNeto":      2014.5,
-  "unidad":        "kg",
-  "bascula":       "BASC-01",
-  "modeloBascula": "Hiweight X10",
-  "estable":       true,
-  "origenLectura": "conectada",
-  "observaciones": "Recepción de proveedor · lote completo",
-  "capturadoEn":   "2026-08-31T09:25:11.320Z"
-}
-```
-
-Respuesta esperada (201): el mismo objeto más `id`, `folio` y `creadoEn`.
-El `folio` (`CP-` = Certificado de Pesaje) lo genera el backend y es el número
-impreso en el PDF.
-
----
-
-## 10 · Documentos generados
-
-| Documento              | Formato          | Dónde se genera       | Desde dónde                       |
-|------------------------|------------------|------------------------|-----------------------------------|
-| Certificado de Pesaje  | PDF A4 vertical  | `reportes-pdf.js`      | Al guardar · botón de cada fila   |
-| Ticket                 | PDF 80 mm        | `reportes-pdf.js`      | Modal del certificado             |
-| Reporte de producción  | PDF A4 apaisado  | `reportes-pdf.js`      | Historial y Reportes              |
-| Listado                | CSV (`;`, BOM)   | `ui.js`                | Historial y Reportes              |
-
-**Flujo del certificado:** al guardar un pesaje se abre automáticamente la
-**vista previa** (`js/certificado-modal.js`), una réplica en pantalla del PDF con
-el mismo logotipo y los mismos bloques. El operario comprueba los datos *antes*
-de emitir el documento. Desde ahí descarga el PDF A4 o el ticket de 80 mm.
-
-En el historial, **cada fila tiene su propio botón «Ver / Descargar»**, anclado al
-borde derecho de la tabla para que siga a la vista por ancha que sea.
-
-**Los PDF se piden primero al backend.** Si Java devuelve el blob se descarga el
-suyo; si el endpoint no existe todavía, el navegador arma el documento con jsPDF.
-Las dos ramas terminan en la misma descarga, así que puedes implementar los PDF
-en Java (iText, JasperReports) cuando quieras sin tocar el frontend.
-
----
-
-## 11 · Reglas del dominio
+## 10 · Reglas del dominio
 
 ### Báscula
 
-| Parámetro            | Valor                                      |
-|----------------------|--------------------------------------------|
-| Modelo del indicador | **Hiweight X10**                           |
-| Capacidad máxima     | **4,600 kg**                               |
-| División de escala   | 0.5 kg (9.200 divisiones)                  |
-| Unidad               | **Kilogramos (kg)** — estricta e inamovible |
+Marca, modelo, capacidad y división viven en la tabla `bascula` y se editan en
+**Administración → Báscula**. Hoy: **Hiweight X10**, **4,600 kg**, división
+**0.5 kg**. La unidad del peso es **kilogramos (kg)**, estricta: los pesos se
+muestran con un decimal porque la celda no resuelve centésimas.
 
-La unidad **no es configurable** en ninguna pantalla. Por eso los pesos se
-muestran con **un solo decimal** (`kg()` en `js/ui.js`): mostrar centésimas
-fingiría una precisión que la celda de carga no tiene.
-
-### Campos obligatorios de captura
+### Campos de un pesaje
 
 | Campo                | Clave JSON      | Notas                                         |
 |----------------------|-----------------|-----------------------------------------------|
-| Tipo de Material     | `tipoMaterial`  | `BOBINA_ALAMBRON` \| `PRODUCTO_SEMIELABORADO` |
-| Código de Rollo/Lote | `codigoRollo`   | Identificador físico del material             |
-| Orden de Trabajo     | `ordenTrabajo`  | Orden de producción asociada                  |
-| Observaciones        | `observaciones` | Obligatorio: estado del rollo o «Sin novedad» |
+| Producción           | `produccionId`  | Una producción en proceso                     |
+| Tipo                 | `tipo`          | `ENTRADA` (bobina) \| `SALIDA` (producto)    |
+| Código de bobina     | `codigoBobina`  | Obligatorio en la entrada; lote opcional en la salida |
+| Bruto y tara         | `pesoBruto`, `tara` | El neto lo calcula el servidor            |
+| Observaciones        | `observaciones` | **Opcional**: sólo si hay algo que anotar     |
 
-El tipo de material se elige con **dos tarjetas grandes**, no con un desplegable:
-es el campo que más se equivoca y sólo tiene dos valores.
+### Reglas que aplica el backend
 
-### Reglas que el backend debe respetar
-
-- **El peso no se edita nunca.** `PUT /pesajes/{id}` sólo acepta los cuatro
-  campos de identificación. El peso es la lectura certificada de la celda de
-  carga y ya figura en un certificado emitido; si está mal, se anula el registro
-  y se vuelve a pesar el material.
-- **`DELETE` no debería borrar la fila.** Conviene marcarla como anulada
-  (`anuladoEn`, `anuladoPor`, `motivo`) y excluirla de las consultas: un
-  certificado de pesaje es un documento comercial y puede hacer falta en una
-  auditoría meses después.
-- **Persistir `origenLectura`.** Distingue una lectura certificada de una
-  tecleada en contingencia.
-
----
-
-## Estado de la simulación
-
-`js/mock-data.js` trae **exactamente 10 registros** escritos a mano —no
-generados al azar— repartidos en los tres últimos días: bobinas de alambrón
-alrededor de 2.000 kg y producto semielaborado entre 50 y 3.000 kg, con las horas
-concentradas entre las 07:00 y las 15:00 y un pico a media mañana. Así los
-reportes gerenciales (hora pico, tonelaje, reparto por material) muestran cifras
-con sentido en lugar de ruido.
-
-Los datos viven en memoria: **al recargar el navegador se regeneran**. Todo eso
-desaparece en cuanto el backend de Java sirva los datos reales.
+- **El peso no se edita nunca.** De un pesaje sólo se corrige el código de
+  bobina y las observaciones. Si un peso está mal, se anula y se vuelve a pesar.
+- **Nada operativo se borra.** Pesajes y producciones se **anulan**: la fila se
+  conserva con quién, cuándo y por qué, y desaparece de listados y reportes.
+- **El servidor es la fuente de verdad** del operario, la hora, la báscula y el
+  neto de cada pesaje.
+- **Los catálogos se desactivan**, no se borran, para que las producciones
+  antiguas conserven sus nombres.

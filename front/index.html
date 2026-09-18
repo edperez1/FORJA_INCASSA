@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="claro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/jpeg" href="/logo-incasa.jpg">
+  <meta name="description" content="Acceso al sistema de pesaje de INCASA, Industria Centroamericana S.A.">
+  <title>Acceso · INCASA - Sistema de Pesaje</title>
+
+  <!-- Evita el destello de tema equivocado: se aplica antes del primer pintado. -->
+  <script>
+    try {
+      var t = localStorage.getItem('incasa_tema');
+      if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+      document.documentElement.dataset.tema = t;
+    } catch (e) { /* modo privado: se queda en claro */ }
+  </script>
+</head>
+<body>
+
+  <main class="acceso">
+
+    <!-- ================= COLUMNA DE MARCA ================= -->
+    <section class="acceso__marca">
+
+      <!-- Logotipo oficial. El JPG ya contiene el nombre de la empresa, así
+           que al lado sólo se compone el nombre del sistema. -->
+      <div class="marca">
+        <img class="marca__logo marca__logo--lg" src="/logo-incasa.jpg"
+             alt="INCASA · Industria Centroamericana, S.A." width="76" height="76">
+        <span class="marca__texto">
+          <span class="marca__sistema">Sistema de Pesaje</span>
+          <span class="marca__bajada">Planta Nicaragua</span>
+        </span>
+      </div>
+
+      <div>
+        <p class="rotulo" style="color: var(--inv-texto-2)">Sistema de pesaje · Nicaragua</p>
+        <h1 class="acceso__lema">Cada bobina<em>pesada y trazada</em></h1>
+        <p class="acceso__nota">
+          Control de producción de punta a punta: la bobina que entra al proceso,
+          lo que sale de él y la merma entre ambos, con lectura directa desde la
+          báscula de planta.
+        </p>
+
+        <ul class="acceso__puntos">
+          <li style="--i:0"><i data-icono="scale"></i> Lectura en vivo del indicador de la báscula</li>
+          <li style="--i:1"><i data-icono="factory"></i> Producciones con entrada, salida, merma y rendimiento</li>
+          <li style="--i:2"><i data-icono="file-check"></i> Certificado de Pesaje en PDF por cada pesada</li>
+          <li style="--i:3"><i data-icono="shield-check"></i> Roles, auditoría y reportes exportables</li>
+        </ul>
+      </div>
+
+      <dl class="acceso__placa">
+        <div><dt>Modelo</dt><dd>Hiweight X10</dd></div>
+        <div><dt>Capacidad</dt><dd>4,600 kg</dd></div>
+        <div><dt>División</dt><dd>0.5 kg</dd></div>
+        <div><dt>Unidad</dt><dd>Kilogramos</dd></div>
+      </dl>
+    </section>
+
+    <!-- ================= PANEL DE FORMULARIOS ================= -->
+    <section class="acceso__panel">
+
+      <div class="tema acceso__tema" role="group" aria-label="Tema de la interfaz">
+        <button type="button" data-tema-btn="claro" aria-pressed="true" title="Tema claro">
+          <i data-icono="sun"></i>
+        </button>
+        <button type="button" data-tema-btn="oscuro" aria-pressed="false" title="Tema oscuro">
+          <i data-icono="moon"></i>
+        </button>
+      </div>
+
+      <div class="acceso__caja">
+
+        <p class="rotulo" id="acceso-rotulo">Turno activo</p>
+        <h2 class="acceso__titulo" id="acceso-titulo">Iniciar sesión</h2>
+        <p class="acceso__sub" id="acceso-sub">Identifícate para abrir la terminal de pesaje.</p>
+
+        <!-- ---------- INICIAR SESIÓN ---------- -->
+        <form class="acceso__forma" id="forma-acceso" novalidate hidden>
+
+          <div class="rejilla rejilla--1">
+            <div class="campo">
+              <label for="usuario">Usuario</label>
+              <div class="campo__control">
+                <i data-icono="user"></i>
+                <input id="usuario" name="usuario" type="text" autocomplete="username"
+                       placeholder="jlopez" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="clave">Contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="clave" name="clave" type="password" autocomplete="current-password"
+                       placeholder="••••••••" required>
+                <button type="button" class="campo__ojo" data-ojo="clave"
+                        aria-label="Mostrar contraseña">
+                  <i data-icono="eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--primario btn--bloque" style="margin-top:24px">
+            <i data-icono="log-in"></i> Ingresar
+          </button>
+
+          <p class="nota" style="margin-top:22px">
+            <i data-icono="info"></i>
+            <span>
+              Las cuentas las crea el <b>administrador del sistema</b>. Si no tienes
+              usuario o olvidaste tu contraseña, pídeselo.
+            </span>
+          </p>
+        </form>
+
+        <!-- ---------- CONFIGURACIÓN INICIAL · PROPIETARIO ----------
+             Sólo aparece mientras el sistema no tiene propietario. Es la
+             primera cuenta y la única que se crea desde esta pantalla. -->
+        <form class="acceso__forma" id="forma-configuracion" novalidate hidden>
+
+          <p class="nota nota--ambar" style="margin-bottom:22px">
+            <i data-icono="shield-check"></i>
+            <span>
+              El sistema todavía no tiene <b>propietario</b>. Esta cuenta tendrá control
+              total: crea a los administradores y a todos los usuarios. Sólo se puede
+              crear una vez.
+            </span>
+          </p>
+
+          <div class="rejilla rejilla--1">
+            <div class="rejilla rejilla--2" style="gap:16px">
+              <div class="campo">
+                <label for="p-nombres">Nombres</label>
+                <input id="p-nombres" type="text" autocomplete="given-name" required>
+              </div>
+              <div class="campo">
+                <label for="p-apellidos">Apellidos</label>
+                <input id="p-apellidos" type="text" autocomplete="family-name" required>
+              </div>
+            </div>
+
+            <div class="rejilla rejilla--2" style="gap:16px">
+              <div class="campo">
+                <label for="p-usuario">Usuario</label>
+                <div class="campo__control">
+                  <i data-icono="user"></i>
+                  <input id="p-usuario" type="text" autocomplete="username" placeholder="propietario" required>
+                </div>
+              </div>
+              <div class="campo">
+                <label for="p-correo">Correo (opcional)</label>
+                <div class="campo__control">
+                  <i data-icono="mail"></i>
+                  <input id="p-correo" type="email" autocomplete="email" placeholder="nombre@incasa.com.ni">
+                </div>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="p-clave">Contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="p-clave" type="password" autocomplete="new-password"
+                       placeholder="Mínimo 8 caracteres" required>
+                <button type="button" class="campo__ojo" data-ojo="p-clave"
+                        aria-label="Mostrar contraseña">
+                  <i data-icono="eye"></i>
+                </button>
+              </div>
+
+              <div class="fuerza" id="fuerza-clave" data-nivel="0">
+                <div class="fuerza__pista" aria-hidden="true">
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                  <span class="fuerza__tramo"></span>
+                </div>
+                <small id="fuerza-texto">Usa 8 o más caracteres, con números y mayúsculas.</small>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="p-repetir">Repetir contraseña</label>
+              <div class="campo__control">
+                <i data-icono="lock"></i>
+                <input id="p-repetir" type="password" autocomplete="new-password"
+                       placeholder="••••••••" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="p-codigo">Código de instalación</label>
+              <div class="campo__control">
+                <i data-icono="key-round"></i>
+                <input id="p-codigo" type="text" autocomplete="off" required>
+              </div>
+              <small>Lo define quien instaló el servidor (variable <code>INCASA_CODIGO_INSTALACION</code>).</small>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn--primario btn--bloque" style="margin-top:24px">
+            <i data-icono="user-plus"></i> Crear propietario y entrar
+          </button>
+        </form>
+
+        <!-- Sin conexión con el servidor: mejor decirlo que mostrar un login que no funciona. -->
+        <div class="vacio" id="sin-servidor" hidden>
+          <i data-icono="triangle-alert"></i>
+          <b>No hay conexión con el servidor</b>
+          <p>Comprueba que el backend esté en marcha y vuelve a intentarlo.</p>
+          <button type="button" class="btn btn--linea btn--sm" id="btn-reintentar" style="margin-top:12px">
+            <i data-icono="refresh-cw"></i> Reintentar
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <div class="avisos" id="avisos" aria-live="polite"></div>
+  <div id="modales"></div>
+
+  <script type="module" src="/js/auth.js"></script>
+</body>
+</html>
