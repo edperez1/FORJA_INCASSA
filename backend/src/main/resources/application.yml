@@ -1,0 +1,78 @@
+# ============================================================================
+#  INCASA · Sistema de Pesaje · configuración del backend
+# ============================================================================
+server:
+  port: 8080            # el frontend (Vite, 5173) reenvía /api y /ws aquí
+
+spring:
+  application:
+    name: incasa-pesaje
+
+  # --------------------------------------------------------------------------
+  #  SQL Server 2022 · instancia SQLEXPRESS · base incasa_pesaje
+  #
+  #  La clave NO vive aquí: se lee de la variable de entorno INCASA_DB_CLAVE.
+  #  Requisitos de la instancia (ver backend/README.md):
+  #    · autenticación mixta (SQL Server y Windows)
+  #    · TCP/IP habilitado en el puerto 1433
+  # --------------------------------------------------------------------------
+  datasource:
+    url: ${INCASA_DB_URL:jdbc:sqlserver://localhost:1433;databaseName=incasa_pesaje;encrypt=true;trustServerCertificate=true}
+    username: ${INCASA_DB_USUARIO:incasa_app}
+    password: ${INCASA_DB_CLAVE:}
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 10000   # 10 s: si la base no responde, que falle claro
+
+  # El esquema es sólo de Flyway (src/main/resources/db/migration): Hibernate
+  # no crea ni altera tablas. Un cambio de esquema = un V2__…sql nuevo.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    # No ensuciar el JSON con nulos: un pesaje sin modificar no lleva
+    # modificadoEn/modificadoPor, y el frontend ya trata el campo ausente.
+    # Las fechas salen en ISO-8601 con Z, que es lo que espera api.js (es el
+    # comportamiento por defecto de Spring Boot 4 con Jackson 3).
+    default-property-inclusion: non_null
+
+incasa:
+  # Código que exige la configuración inicial (la cuenta del PROPIETARIO, la
+  # primera del sistema). Sólo sirve mientras no exista propietario: después
+  # ya no abre nada. Cámbialo con la variable INCASA_CODIGO_INSTALACION.
+  codigo-instalacion: ${INCASA_CODIGO_INSTALACION:INCASA-2026}
+
+  # Vida del token de sesión, en segundos (8 h = un turno completo).
+  sesion-segundos: 28800
+
+  produccion:
+    # Merma máxima entre entrada y salida, en %. Por encima, la producción no
+    # se cierra sola ni la cierra un operario: sólo un supervisor, justificándolo.
+    merma-maxima-pct: ${INCASA_MERMA_MAXIMA:2}
+
+  pesaje:
+    # El botón «Activar Simulación de Báscula» sigue visible en producción
+    # para formar operarios. Con false (lo correcto en planta) el backend
+    # rechaza guardar esos pesos: un certificado nunca sale de un peso inventado.
+    aceptar-simulador: ${INCASA_ACEPTAR_SIMULADOR:false}
+
+  bascula:
+    # Marca, modelo, capacidad y división viven en la tabla `bascula` y se
+    # editan desde el panel de administración.
+    # true  → el backend emite lecturas sintéticas (permite probar sin hardware)
+    # false → lee el puerto serie real. Requiere implementar LectorSerie.
+    simular: ${INCASA_BASCULA_SIMULAR:true}
+    puerto-serie: ${INCASA_PUERTO_SERIE:COM3}
+
+logging:
+  level:
+    ni.com.incasa.pesaje: DEBUG

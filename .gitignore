@@ -4,3 +4,12 @@ dist/
 *.local
 .DS_Store
 Thumbs.db
+
+# Backend
+backend/target/
+backend/oracleJdk-27/
+# Lo genera `pnpm build:java`
+backend/src/main/resources/static/
+
+# Ajustes locales del editor
+.vscode/

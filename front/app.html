@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es" data-tema="claro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/jpeg" href="/logo-incasa.jpg">
+  <meta name="description" content="Panel del sistema de pesaje de INCASA: producciones, pesaje en vivo, historial, reportes y administración.">
+  <title>Panel · INCASA - Sistema de Pesaje</title>
+
+  <!-- Evita el destello de tema equivocado: se aplica antes del primer pintado. -->
+  <script>
+    try {
+      var t = localStorage.getItem('incasa_tema');
+      if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+      document.documentElement.dataset.tema = t;
+    } catch (e) { /* modo privado: se queda en claro */ }
+  </script>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ================= BARRA LATERAL ================= -->
+  <aside class="lateral" id="lateral" data-abierto="no">
+
+    <!-- Logotipo oficial. El JPG ya contiene el nombre «INCASA · Industria
+         Centroamericana, S.A.», así que sólo se le acompaña del nombre del
+         sistema, nunca del nombre de la empresa repetido. -->
+    <div class="lateral__marca">
+      <div class="marca">
+        <img class="marca__logo" src="/logo-incasa.jpg"
+             alt="INCASA · Industria Centroamericana, S.A." width="52" height="52">
+        <span class="marca__texto">
+          <span class="marca__sistema">Sistema de Pesaje</span>
+          <span class="marca__bajada">Planta Nicaragua</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- data-permiso: el ítem sólo se muestra a quien tenga ese permiso
+         (varios separados por espacio = basta con uno). El backend vuelve a
+         exigirlo en cada petición: esto sólo ordena la pantalla. -->
+    <nav class="menu" aria-label="Secciones">
+      <button class="menu__item" data-vista="pesaje" data-permiso="PESAR">
+        <i data-icono="scale"></i> Pesaje en vivo
+      </button>
+      <button class="menu__item" data-vista="producciones" data-permiso="CONSULTAR">
+        <i data-icono="factory"></i> Producciones
+        <span class="menu__contador num" id="contador-producciones">0</span>
+      </button>
+      <button class="menu__item" data-vista="historial" data-permiso="CONSULTAR">
+        <i data-icono="history"></i> Historial
+      </button>
+      <button class="menu__item" data-vista="reportes" data-permiso="CONSULTAR">
+        <i data-icono="chart-column"></i> Reportes
+      </button>
+      <button class="menu__item" data-vista="admin"
+              data-permiso="GESTIONAR_USUARIOS GESTIONAR_CATALOGOS VER_AUDITORIA">
+        <i data-icono="settings"></i> Administración
+      </button>
+      <button class="menu__item" data-vista="perfil">
+        <i data-icono="user"></i> Mi perfil
+      </button>
+    </nav>
+
+    <div class="lateral__pie">
+      <div class="enlace-bascula" id="enlace-bascula" data-estado="esperando" data-permiso="PESAR">
+        <span class="lamparita"></span>
+        <span id="enlace-texto">Báscula · esperando</span>
+      </div>
+      <button class="menu__item" id="btn-salir">
+        <i data-icono="log-out"></i> Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <div class="velo-menu" id="velo-menu" hidden></div>
+
+  <!-- ================= ÁREA PRINCIPAL ================= -->
+  <div class="principal">
+
+    <header class="barra">
+      <button class="menu-movil" id="btn-menu" aria-label="Abrir menú" aria-expanded="false">
+        <i data-icono="menu"></i>
+      </button>
+
+      <!-- Logotipo también en el encabezado superior. -->
+      <div class="barra__marca">
+        <img class="marca__logo" src="/logo-incasa.jpg" alt="INCASA" width="46" height="46">
+      </div>
+      <span class="barra__sep" aria-hidden="true"></span>
+
+      <h1 class="barra__titulo" id="titulo-barra">—</h1>
+
+      <div class="barra__derecha">
+        <span class="barra__reloj" id="reloj">--:--:--</span>
+
+        <div class="tema" role="group" aria-label="Tema de la interfaz">
+          <button type="button" data-tema-btn="claro" aria-pressed="true" title="Tema claro">
+            <i data-icono="sun"></i>
+          </button>
+          <button type="button" data-tema-btn="oscuro" aria-pressed="false" title="Tema oscuro">
+            <i data-icono="moon"></i>
+          </button>
+        </div>
+
+        <div class="barra__usuario">
+          <span class="ficha" id="ficha-usuario">--</span>
+          <span>
+            <b id="barra-nombre">—</b>
+            <small id="barra-rol">—</small>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="lienzo">
+
+      <!-- ============ VISTA · PESAJE EN VIVO ============ -->
+      <section class="vista" id="vista-pesaje" hidden>
+        <div class="encabezado-vista">
+          <div>
+            <p class="rotulo">Báscula <span id="bascula-activa">—</span></p>
+            <h2>Pesaje en vivo</h2>
+          </div>
+          <div class="acciones">
+            <button class="btn btn--linea" id="btn-limpiar">
+              <i data-icono="eraser"></i> Limpiar registro
+            </button>
+          </div>
+        </div>
+
+        <div class="pesaje">
+
+          <!-- ---- Cabezal de báscula ---- -->
+          <div class="cabezal">
+            <div class="cabezal__placa">
+              <span class="lamparita"></span>
+              <span id="cabezal-bascula">—</span>
+              <span class="cabezal__modelo" id="cabezal-modelo">—</span>
+              <span class="estado estado--espera" id="estado-lectura">SIN LECTURA</span>
+            </div>
+
+            <div class="visor" id="visor">
+              <div class="visor__leds">
+                <span class="visor__led" id="led-neto" data-encendido="si">Neto</span>
+                <span class="visor__led" id="led-bruto">Bruto</span>
+                <span class="visor__led" id="led-tara">Tara</span>
+              </div>
+
+              <div class="visor__pila">
+                <span class="visor__fantasma" aria-hidden="true">8888.8</span>
+                <span class="visor__valor num" id="peso-vivo"
+                      aria-live="off" aria-label="Peso en la plataforma">----.-</span>
+              </div>
+              <p class="visor__unidad" id="visor-unidad">kilogramos</p>
+            </div>
+
+            <div class="capacidad" id="capacidad">
+              <div class="capacidad__pista">
+                <div class="capacidad__nivel" id="capacidad-nivel"></div>
+              </div>
+              <div class="capacidad__pie">
+                <span>Celda de carga</span>
+                <span id="capacidad-texto">—</span>
+              </div>
+            </div>
+
+            <!-- ---- FUENTE DE LECTURA ----
+                 Arranca SIEMPRE en modo real esperando al indicador. La
+                 simulación y el ingreso manual son decisiones conscientes
+                 del operario, nunca el estado por omisión. -->
+            <div class="fuente" id="fuente" data-modo="esperando">
+              <p class="fuente__cabeza">
+                <i data-icono="radio-tower"></i> Fuente de lectura
+              </p>
+
+              <p class="fuente__estado" id="fuente-estado">
+                <span class="fuente__esperando" aria-hidden="true"></span>
+                Esperando conexión con el indicador
+              </p>
+
+              <div class="fuente__botones" id="fuente-botones">
+                <button type="button" class="btn btn--ambar btn--sm" id="btn-simular">
+                  <i data-icono="play"></i> Activar Simulación de Báscula
+                </button>
+                <button type="button" class="btn btn--linea btn--sm" id="btn-manual">
+                  <i data-icono="keyboard"></i> Ingreso Manual / Contingencia
+                </button>
+              </div>
+
+              <!-- Ingreso manual (modo contingencia) -->
+              <div class="fuente__manual" id="fuente-manual" hidden>
+                <div class="campo">
+                  <label for="peso-manual">Peso bruto del indicador (kg)</label>
+                  <input id="peso-manual" type="number" step="0.5" min="0"
+                         placeholder="0.0" inputmode="decimal">
+                </div>
+                <button type="button" class="btn btn--ambar btn--sm" id="btn-usar-manual">
+                  <i data-icono="check"></i> Usar peso
+                </button>
+                <button type="button" class="btn btn--linea btn--sm" id="btn-salir-manual">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+
+            <div class="botonera">
+              <button class="tecla" id="tecla-cero" disabled><i data-icono="target"></i> Cero</button>
+              <button class="tecla" id="tecla-tara" disabled><i data-icono="layers"></i> Tara</button>
+              <button class="tecla" id="tecla-bruto" disabled><i data-icono="weight"></i> Bruto</button>
+              <button class="tecla tecla--capturar" id="tecla-capturar" disabled>
+                <i data-icono="check"></i> Capturar peso
+              </button>
+            </div>
+          </div>
+
+          <!-- ---- Formulario del pesaje ---- -->
+          <form class="tarjeta" id="forma-pesaje" novalidate>
+            <div class="tarjeta__cabeza">
+              <h3>Registro de pesaje</h3>
+              <span class="etiqueta num" id="folio-previo">FOLIO —</span>
+            </div>
+
+            <div class="tarjeta__cuerpo">
+
+              <!-- Producción a la que pertenece la pesada -->
+              <div class="campo campo--ancho">
+                <label for="produccion">
+                  Producción <span class="obligatorio" aria-hidden="true">*</span>
+                </label>
+                <div class="produccion-elegir">
+                  <select id="produccion" required></select>
+                  <button type="button" class="btn btn--linea" id="btn-nueva-produccion" data-permiso="ABRIR_PRODUCCION">
+                    <i data-icono="plus"></i> Nueva
+                  </button>
+                </div>
+              </div>
+
+              <div class="ficha-produccion" id="ficha-produccion" hidden></div>
+
+              <div class="campo campo--ancho" style="margin-top:20px">
+                <label id="etiqueta-tipo">
+                  Tipo de pesaje <span class="obligatorio" aria-hidden="true">*</span>
+                </label>
+                <div class="opciones" role="radiogroup" aria-labelledby="etiqueta-tipo">
+                  <label class="opcion">
+                    <input type="radio" name="tipo" value="ENTRADA" checked>
+                    <i data-icono="arrow-down-to-line"></i>
+                    <span><b>Entrada · bobina</b><small>La bobina que entra al proceso</small></span>
+                  </label>
+                  <label class="opcion">
+                    <input type="radio" name="tipo" value="SALIDA">
+                    <i data-icono="arrow-up-from-line"></i>
+                    <span><b>Salida · producto</b><small>Lo que sale del proceso</small></span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="separador"><span class="rotulo">Pesos</span></div>
+
+              <div class="rejilla rejilla--3">
+                <div class="campo campo--peso">
+                  <label for="peso-bruto">Peso bruto (kg)</label>
+                  <input id="peso-bruto" name="pesoBruto" type="number" step="0.1" readonly placeholder="0.0">
+                  <small>Se llena al capturar.</small>
+                </div>
+                <div class="campo campo--peso">
+                  <label for="tara">Tara (kg)</label>
+                  <input id="tara" name="tara" type="number" step="0.1" value="0.0">
+                  <small>Editable o tomada con la tecla Tara.</small>
+                </div>
+                <div class="campo campo--peso campo--neto">
+                  <label for="peso-neto">Peso neto (kg)</label>
+                  <input id="peso-neto" name="pesoNeto" type="number" step="0.1" readonly placeholder="0.0">
+                  <small>Bruto menos tara.</small>
+                </div>
+              </div>
+
+              <div class="separador"><span class="rotulo">Identificación</span></div>
+
+              <div class="rejilla">
+                <div class="campo">
+                  <label for="codigo-bobina" id="etiqueta-bobina">
+                    Código de bobina <span class="obligatorio" aria-hidden="true">*</span>
+                  </label>
+                  <input id="codigo-bobina" name="codigoBobina" type="text" maxlength="40"
+                         placeholder="BOB-84532" autocomplete="off">
+                </div>
+                <!-- Sólo en SALIDA: cuánto producto dejó, en la unidad de la producción -->
+                <div class="campo" id="campo-cantidad" hidden>
+                  <label for="cantidad" id="etiqueta-cantidad">Cantidad producida</label>
+                  <input id="cantidad" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0">
+                  <small id="ayuda-cantidad">En la unidad de medida de la producción.</small>
+                </div>
+                <div class="campo">
+                  <label for="operario">Operario</label>
+                  <input id="operario" type="text" readonly>
+                </div>
+                <div class="campo campo--ancho">
+                  <label for="observaciones">Observaciones (opcional)</label>
+                  <textarea id="observaciones" name="observaciones" maxlength="500"
+                            placeholder="Sólo si hay algo que anotar: estado de la bobina, incidencias…"></textarea>
+                </div>
+              </div>
+
+              <div class="resumen-pesaje">
+                <span class="resumen-pesaje__dato">
+                  <span>Neto a registrar</span>
+                  <b class="num" id="resumen-neto">0.0 kg</b>
+                </span>
+                <span class="resumen-pesaje__sep"></span>
+                <span class="resumen-pesaje__dato">
+                  <span>Producción</span>
+                  <b id="resumen-produccion">—</b>
+                </span>
+                <span class="resumen-pesaje__sep"></span>
+                <span class="resumen-pesaje__dato">
+                  <span>Uso de báscula</span>
+                  <b class="num" id="resumen-capacidad">—</b>
+                </span>
+              </div>
+
+              <div style="display:flex; gap:12px; margin-top:20px; flex-wrap:wrap">
+                <button type="submit" class="btn btn--primario" style="flex:1; min-width:250px">
+                  <i data-icono="file-check"></i> Guardar y emitir certificado
+                </button>
+                <button type="button" class="btn btn--linea" id="btn-terminar-actual" data-permiso="TERMINAR_PRODUCCION" disabled>
+                  <i data-icono="flag"></i> Terminar producción
+                </button>
+                <button type="button" class="btn btn--linea" id="btn-certificado">
+                  <i data-icono="file-down"></i> Último certificado
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ---- Últimos pesajes del turno ---- -->
+        <div class="tarjeta" style="margin-top:24px">
+          <div class="tarjeta__cabeza">
+            <h3>Últimos pesajes de hoy</h3>
+            <div class="acciones">
+              <button class="btn btn--linea btn--sm" data-ir="historial">
+                Ver historial <i data-icono="arrow-right"></i>
+              </button>
+            </div>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th><th>Producción</th><th>Tipo</th><th>Bobina / lote</th>
+                  <th>Producto</th><th class="num">Neto (kg)</th><th>Hora</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-recientes"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA · PRODUCCIONES ============ -->
+      <section class="vista" id="vista-producciones" hidden>
+        <div class="encabezado-vista">
+          <div>
+            <p class="rotulo">Entrada, salida y merma</p>
+            <h2>Producciones</h2>
+          </div>
+          <div class="acciones">
+            <button class="btn btn--primario" id="btn-abrir-produccion" data-permiso="ABRIR_PRODUCCION">
+              <i data-icono="circle-play"></i> Abrir producción
+            </button>
+          </div>
+        </div>
+
+        <dl class="indicadores">
+          <div class="indicador indicador--ambar" style="--i:0">
+            <div class="indicador__cabeza"><i data-icono="circle-play"></i><dt>En proceso</dt></div>
+            <dd id="pr-kpi-proceso">0</dd>
+            <p class="indicador__pie" id="pr-kpi-proceso-pie">—</p>
+          </div>
+          <div class="indicador indicador--verde" style="--i:1">
+            <div class="indicador__cabeza"><i data-icono="package-check"></i><dt>Terminadas</dt></div>
+            <dd id="pr-kpi-terminadas">0</dd>
+            <p class="indicador__pie" id="pr-kpi-terminadas-pie">—</p>
+          </div>
+          <div class="indicador" style="--i:2">
+            <div class="indicador__cabeza"><i data-icono="weight"></i><dt>Merma de terminadas</dt></div>
+            <dd id="pr-kpi-merma">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="pr-kpi-merma-pie">—</p>
+          </div>
+          <div class="indicador indicador--verde" style="--i:3">
+            <div class="indicador__cabeza"><i data-icono="percent"></i><dt>Rendimiento medio</dt></div>
+            <dd id="pr-kpi-rendimiento">— <span>%</span></dd>
+            <p class="indicador__pie" id="pr-kpi-rendimiento-pie">—</p>
+          </div>
+        </dl>
+
+        <div class="tarjeta">
+          <div class="filtros">
+            <div class="campo" style="flex:2 1 240px">
+              <label for="pr-buscar">Buscar</label>
+              <div class="campo__control">
+                <i data-icono="search"></i>
+                <input id="pr-buscar" type="search" placeholder="Código, orden, producto u operario…">
+              </div>
+            </div>
+            <div class="campo">
+              <label for="pr-estado">Estado</label>
+              <select id="pr-estado">
+                <option value="">En proceso y terminadas</option>
+                <option value="PROCESO">En proceso</option>
+                <option value="TERMINADO">Terminadas</option>
+                <option value="ANULADA">Anuladas</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="pr-producto">Producto</label>
+              <select id="pr-producto"><option value="">Todos</option></select>
+            </div>
+            <div class="campo">
+              <label for="pr-desde">Inicio desde</label>
+              <input id="pr-desde" type="date">
+            </div>
+            <div class="campo">
+              <label for="pr-hasta">Hasta</label>
+              <input id="pr-hasta" type="date">
+            </div>
+            <button class="btn btn--linea" id="pr-limpiar">
+              <i data-icono="rotate-ccw"></i> Limpiar
+            </button>
+          </div>
+
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Inicio</th>
+                  <th>Producto</th>
+                  <th>Proceso → destino</th>
+                  <th class="num">Producido / plan</th>
+                  <th>Bobinas</th>
+                  <th class="num">Entrada (kg)</th>
+                  <th class="num">Salida (kg)</th>
+                  <th class="num">Merma</th>
+                  <th>Estado</th>
+                  <th class="num">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-producciones"></tbody>
+            </table>
+          </div>
+
+          <div class="pie-tabla">
+            <span id="conteo-producciones">0 producciones</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA · HISTORIAL ============ -->
+      <section class="vista" id="vista-historial" hidden>
+        <div class="encabezado-vista">
+          <div>
+            <p class="rotulo">Pesajes registrados</p>
+            <h2>Historial de pesajes</h2>
+          </div>
+          <div class="acciones">
+            <button class="btn btn--linea" id="btn-csv">
+              <i data-icono="file-down"></i> Exportar CSV
+            </button>
+            <button class="btn btn--pizarra" id="btn-pdf">
+              <i data-icono="file-text"></i> Exportar PDF
+            </button>
+          </div>
+        </div>
+
+        <dl class="indicadores">
+          <div class="indicador" style="--i:0">
+            <div class="indicador__cabeza"><i data-icono="clipboard-list"></i><dt>Pesajes</dt></div>
+            <dd id="kpi-registros">0</dd>
+            <p class="indicador__pie" id="kpi-registros-pie">—</p>
+          </div>
+          <div class="indicador indicador--ambar" style="--i:1">
+            <div class="indicador__cabeza"><i data-icono="arrow-down-to-line"></i><dt>Kg de entrada</dt></div>
+            <dd id="kpi-entrada">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="kpi-entrada-pie">—</p>
+          </div>
+          <div class="indicador indicador--verde" style="--i:2">
+            <div class="indicador__cabeza"><i data-icono="arrow-up-from-line"></i><dt>Kg de salida</dt></div>
+            <dd id="kpi-salida">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="kpi-salida-pie">—</p>
+          </div>
+          <div class="indicador" style="--i:3">
+            <div class="indicador__cabeza"><i data-icono="factory"></i><dt>Producciones</dt></div>
+            <dd id="kpi-producciones">0</dd>
+            <p class="indicador__pie" id="kpi-producciones-pie">—</p>
+          </div>
+        </dl>
+
+        <div class="tarjeta">
+          <div class="filtros">
+            <div class="campo" style="flex:2 1 240px">
+              <label for="f-busqueda">Buscar</label>
+              <div class="campo__control">
+                <i data-icono="search"></i>
+                <input id="f-busqueda" type="search"
+                       placeholder="Folio, bobina, producción, orden, operario…">
+              </div>
+            </div>
+            <div class="campo">
+              <label for="f-tipo">Tipo</label>
+              <select id="f-tipo">
+                <option value="">Todos</option>
+                <option value="ENTRADA">Entradas</option>
+                <option value="SALIDA">Salidas</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="f-producto">Producto</label>
+              <select id="f-producto"><option value="">Todos</option></select>
+            </div>
+            <div class="campo">
+              <label for="f-desde">Desde</label>
+              <input id="f-desde" type="date">
+            </div>
+            <div class="campo">
+              <label for="f-hasta">Hasta</label>
+              <input id="f-hasta" type="date">
+            </div>
+            <button class="btn btn--linea" id="btn-limpiar-filtros">
+              <i data-icono="rotate-ccw"></i> Limpiar
+            </button>
+          </div>
+
+          <div class="filtros" style="border-bottom:1px solid var(--borde)">
+            <span class="rotulo" style="align-self:center">Rango rápido</span>
+            <div class="rangos" id="rangos">
+              <button type="button" data-rango="hoy" aria-pressed="false">Hoy</button>
+              <button type="button" data-rango="7" aria-pressed="false">7 días</button>
+              <button type="button" data-rango="30" aria-pressed="true">30 días</button>
+              <button type="button" data-rango="todo" aria-pressed="false">Todo</button>
+            </div>
+          </div>
+
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th data-orden="folio">Folio</th>
+                  <th data-orden="capturadoEn" aria-sort="descending">Fecha y hora</th>
+                  <th data-orden="produccion">Producción</th>
+                  <th data-orden="tipo">Tipo</th>
+                  <th data-orden="codigoBobina">Bobina / lote</th>
+                  <th data-orden="producto">Producto</th>
+                  <th data-orden="operario">Operario</th>
+                  <th class="num" data-orden="pesoBruto">Bruto</th>
+                  <th class="num" data-orden="tara">Tara</th>
+                  <th class="num" data-orden="pesoNeto">Neto</th>
+                  <th class="num" data-orden="cantidad">Producido</th>
+                  <th class="num">Acciones</th>
+                  <th class="num col-fija">Certificado</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-historial"></tbody>
+            </table>
+          </div>
+
+          <div class="pie-tabla">
+            <span id="conteo-historial">0 registros</span>
+            <div class="acciones">
+              <button class="btn btn--linea btn--sm" id="btn-csv-pie">
+                <i data-icono="file-down"></i> Descargar CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA · REPORTES ============ -->
+      <section class="vista" id="vista-reportes" hidden>
+        <div class="encabezado-vista">
+          <div>
+            <p class="rotulo">Analítica de producción</p>
+            <h2>Reportes gerenciales</h2>
+          </div>
+          <div class="acciones">
+            <button class="btn btn--linea" id="btn-csv-rep">
+              <i data-icono="file-down"></i> Exportar CSV
+            </button>
+            <button class="btn btn--pizarra" id="btn-pdf-rep">
+              <i data-icono="file-text"></i> Generar PDF
+            </button>
+          </div>
+        </div>
+
+        <p class="rotulo" style="margin-bottom:14px" id="reportes-alcance">
+          Sobre los pesajes filtrados en el historial
+        </p>
+
+        <dl class="indicadores indicadores--seis">
+          <div class="indicador indicador--ambar" style="--i:0">
+            <div class="indicador__cabeza"><i data-icono="arrow-down-to-line"></i><dt>Kg de entrada</dt></div>
+            <dd id="rep-entrada">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="rep-entrada-pie">—</p>
+          </div>
+          <div class="indicador indicador--verde" style="--i:1">
+            <div class="indicador__cabeza"><i data-icono="arrow-up-from-line"></i><dt>Kg de salida</dt></div>
+            <dd id="rep-salida">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="rep-salida-pie">—</p>
+          </div>
+          <div class="indicador" style="--i:2">
+            <div class="indicador__cabeza"><i data-icono="weight"></i><dt>Merma (terminadas)</dt></div>
+            <dd id="rep-merma">0 <span>kg</span></dd>
+            <p class="indicador__pie" id="rep-merma-pie">—</p>
+          </div>
+          <div class="indicador indicador--verde" style="--i:3">
+            <div class="indicador__cabeza"><i data-icono="percent"></i><dt>Rendimiento</dt></div>
+            <dd id="rep-rendimiento">— <span>%</span></dd>
+            <p class="indicador__pie" id="rep-rendimiento-pie">—</p>
+          </div>
+          <div class="indicador indicador--ambar" style="--i:4">
+            <div class="indicador__cabeza"><i data-icono="trending-up"></i><dt>Producto de mayor volumen</dt></div>
+            <dd class="dd-texto" id="rep-lider">—</dd>
+            <p class="indicador__pie" id="rep-lider-pie">—</p>
+          </div>
+          <div class="indicador" style="--i:5">
+            <div class="indicador__cabeza"><i data-icono="clock"></i><dt>Hora pico de báscula</dt></div>
+            <dd id="rep-pico-hora">—</dd>
+            <p class="indicador__pie" id="rep-pico-hora-pie">—</p>
+          </div>
+        </dl>
+
+        <div class="analitica analitica--par">
+          <div class="tarjeta">
+            <div class="tarjeta__cabeza">
+              <h3>Salida por producto</h3>
+              <span class="etiqueta etiqueta--neutra num" id="tonelaje-rotulo">0 t</span>
+            </div>
+            <div class="tarjeta__cuerpo">
+              <div class="reparto" id="reparto-producto"></div>
+            </div>
+          </div>
+
+          <div class="tarjeta">
+            <div class="tarjeta__cabeza">
+              <h3>Flujo por hora de la jornada</h3>
+              <span class="etiqueta etiqueta--neutra num" id="grafico-horas-rotulo">—</span>
+            </div>
+            <div class="tarjeta__cuerpo">
+              <svg class="grafico" id="grafico-horas" role="img"
+                   aria-label="Número de pesajes por hora del día"></svg>
+              <div class="hora-pico">
+                <i data-icono="clock"></i>
+                <div>
+                  <b id="hora-pico-valor">—</b>
+                  <span id="hora-pico-detalle">Sin datos en el periodo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analitica">
+          <div class="tarjeta">
+            <div class="tarjeta__cabeza">
+              <h3>Salida por jornada</h3>
+              <span class="etiqueta etiqueta--neutra num" id="grafico-rotulo">kg netos</span>
+            </div>
+            <div class="tarjeta__cuerpo">
+              <svg class="grafico" id="grafico-dias" role="img"
+                   aria-label="Kilogramos de salida por día"></svg>
+            </div>
+          </div>
+
+          <div class="tarjeta">
+            <div class="tarjeta__cabeza"><h3>Salida por área de destino</h3></div>
+            <div class="tarjeta__cuerpo">
+              <div class="reparto" id="reparto-destino"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta" style="margin-bottom:24px">
+          <div class="tarjeta__cabeza">
+            <h3>Rendimiento por producción terminada</h3>
+            <span class="etiqueta etiqueta--neutra" id="rendimiento-rotulo">0 producciones</span>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producción</th>
+                  <th>Producto</th>
+                  <th>Bobinas</th>
+                  <th class="num">Entrada (kg)</th>
+                  <th class="num">Salida (kg)</th>
+                  <th class="num">Producido</th>
+                  <th class="num">Merma (kg)</th>
+                  <th class="num">Rendimiento</th>
+                  <th>Terminada</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-rendimiento"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="tarjeta__cabeza">
+            <h3>Detalle por operario</h3>
+            <span class="etiqueta etiqueta--neutra" id="operarios-rotulo">0 operarios</span>
+          </div>
+          <div class="tabla-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Operario</th>
+                  <th class="num">Pesajes</th>
+                  <th class="num">Entradas</th>
+                  <th class="num">Salidas</th>
+                  <th class="num">Kg entrada</th>
+                  <th class="num">Kg salida</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-operarios"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA · ADMINISTRACIÓN ============
+           La pinta entera js/vista-admin.js al abrirla. -->
+      <section class="vista" id="vista-admin" hidden></section>
+
+      <!-- ============ VISTA · PERFIL ============ -->
+      <section class="vista" id="vista-perfil" hidden>
+        <div class="encabezado-vista">
+          <div>
+            <p class="rotulo">Cuenta y preferencias</p>
+            <h2>Mi perfil</h2>
+          </div>
+        </div>
+
+        <div class="perfil">
+          <aside class="perfil__ficha">
+            <span class="ficha" id="perfil-iniciales">--</span>
+            <h3 id="perfil-nombre">—</h3>
+            <p id="perfil-rol">—</p>
+            <dl class="perfil__datos">
+              <div><dt>Usuario</dt><dd id="perfil-usuario">—</dd></div>
+              <div><dt>Ingreso</dt><dd id="perfil-ingreso">—</dd></div>
+              <div><dt>Pesajes hoy</dt><dd id="perfil-pesajes">0</dd></div>
+              <div><dt>Kg pesados hoy</dt><dd id="perfil-kilos">0 kg</dd></div>
+            </dl>
+          </aside>
+
+          <div style="display:grid; gap:24px">
+            <form class="tarjeta" id="forma-perfil" novalidate>
+              <div class="tarjeta__cabeza"><h3>Datos del usuario</h3></div>
+              <div class="tarjeta__cuerpo">
+                <div class="rejilla">
+                  <div class="campo">
+                    <label for="p-nombres">Nombres</label>
+                    <input id="p-nombres" type="text" maxlength="80" required>
+                  </div>
+                  <div class="campo">
+                    <label for="p-apellidos">Apellidos</label>
+                    <input id="p-apellidos" type="text" maxlength="80" required>
+                  </div>
+                  <div class="campo">
+                    <label for="p-usuario">Usuario</label>
+                    <input id="p-usuario" type="text" readonly>
+                    <small>Lo asigna el administrador.</small>
+                  </div>
+                  <div class="campo">
+                    <label for="p-rol">Rol</label>
+                    <input id="p-rol" type="text" readonly>
+                    <small>Sólo lo cambia un administrador o el propietario.</small>
+                  </div>
+                  <div class="campo campo--ancho">
+                    <label for="p-correo">Correo (opcional)</label>
+                    <input id="p-correo" type="email" maxlength="160" placeholder="nombre@incasa.com.ni">
+                  </div>
+                </div>
+
+                <p class="nota" style="margin-top:20px">
+                  <i data-icono="info"></i>
+                  <span>
+                    La unidad de pesaje del sistema es <b>kilogramos (kg)</b> y no es
+                    configurable: todos los certificados se emiten en kg.
+                  </span>
+                </p>
+
+                <button type="submit" class="btn btn--primario" style="margin-top:20px">
+                  <i data-icono="save"></i> Guardar cambios
+                </button>
+              </div>
+            </form>
+
+            <form class="tarjeta" id="forma-clave" novalidate>
+              <div class="tarjeta__cabeza"><h3>Contraseña</h3></div>
+              <div class="tarjeta__cuerpo">
+                <div class="rejilla rejilla--3">
+                  <div class="campo">
+                    <label for="c-actual">Contraseña actual</label>
+                    <input id="c-actual" type="password" autocomplete="current-password">
+                  </div>
+                  <div class="campo">
+                    <label for="c-nueva">Nueva contraseña</label>
+                    <input id="c-nueva" type="password" autocomplete="new-password">
+                  </div>
+                  <div class="campo">
+                    <label for="c-repetir">Repetir contraseña</label>
+                    <input id="c-repetir" type="password" autocomplete="new-password">
+                  </div>
+                </div>
+                <p class="nota" style="margin-top:18px">
+                  <i data-icono="shield-check"></i>
+                  <span>Al cambiarla se cierran tus sesiones abiertas en otras terminales.</span>
+                </p>
+                <div style="display:flex; gap:12px; margin-top:22px; flex-wrap:wrap">
+                  <button type="submit" class="btn btn--primario">
+                    <i data-icono="key-round"></i> Actualizar contraseña
+                  </button>
+                  <button type="button" class="btn btn--peligro" id="btn-salir-2">
+                    <i data-icono="log-out"></i> Cerrar sesión
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="avisos" id="avisos" aria-live="polite"></div>
+<div id="modales"></div>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

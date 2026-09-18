@@ -1,0 +1,201 @@
+/* ============================================================================
+   INCASA · admin.css
+   ---------------------------------------------------------------------------
+   Vista de Administración: sub-pestañas, rejilla de catálogos, filas
+   inactivas y pequeños detalles de los formularios de gestión.
+
+   Sólo usa tokens de rol (tokens.css), así que el tema claro/oscuro lo
+   resuelve `[data-tema]` sin reglas propias aquí.
+   ==========================================================================*/
+
+/* ============ SUB-PESTAÑAS ================================= */
+
+/* Píldoras horizontales. En móvil se desplazan dentro de su propia franja
+   (overflow-x) para que la página nunca tenga scroll horizontal. */
+.subpestanas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 5px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  background: var(--superficie-tenue);
+  border: 1px solid var(--borde);
+  border-radius: var(--r-full);
+  max-width: 100%;
+  width: max-content;
+}
+
+.subpestanas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 42px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--texto-2);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--sal-rapido) var(--curva),
+              color var(--sal-rapido) var(--curva);
+}
+.subpestanas button svg { width: 17px; height: 17px; flex: none; }
+.subpestanas button:hover { color: var(--texto); background: var(--superficie); }
+.subpestanas button:focus-visible { outline: 3px solid var(--accion); outline-offset: 1px; }
+.subpestanas button[aria-selected="true"] {
+  background: var(--accion);
+  color: var(--accion-texto);
+}
+
+/* ============ BARRA DE HERRAMIENTAS ======================== */
+
+.admin-herramientas .campo--buscar { flex: 2 1 240px; }
+.admin-herramientas .campo--filtro { flex: 0 1 180px; }
+.admin-herramientas .btn { margin-left: auto; }
+
+/* ============ TABLAS DE GESTIÓN ============================ */
+
+/* Nombre con su ficha de iniciales y el usuario debajo. */
+.admin-persona { display: flex; align-items: center; gap: 12px; }
+.admin-persona .ficha { width: 36px; height: 36px; font-size: 13.5px; }
+.admin-persona b { display: block; font-weight: 600; line-height: 1.25; }
+.admin-persona small,
+.admin-sub {
+  display: block;
+  font-size: 12.5px;
+  color: var(--texto-3);
+  line-height: 1.35;
+}
+.admin-persona small { font-family: var(--dato); }
+
+/* Pista en lugar de acciones (propietario, cuenta propia, administrador). */
+.admin-pista {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--texto-3);
+  white-space: nowrap;
+}
+.admin-pista svg { width: 14px; height: 14px; flex: none; }
+
+/* Texto largo que sí debe partirse (observaciones, detalle de auditoría). */
+.admin-texto {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 460px;
+  color: var(--texto-2);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* Elemento desactivado: sigue visible (se puede reactivar) pero apagado. */
+tbody tr.admin-fila--inactiva td { color: var(--texto-3); }
+tbody tr.admin-fila--inactiva .admin-persona b,
+tbody tr.admin-fila--inactiva .admin-nombre { text-decoration: line-through; text-decoration-color: var(--borde-fuerte); }
+tbody tr.admin-fila--inactiva .ficha { opacity: .5; }
+
+.admin-nombre { font-weight: 600; }
+
+.admin-contador {
+  font-size: 13px;
+  color: var(--texto-2);
+  font-weight: 500;
+}
+
+/* ============ CATÁLOGOS ==================================== */
+
+.admin-rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 18px;
+}
+.admin-rejilla > .tarjeta { display: flex; flex-direction: column; min-width: 0; }
+
+.tarjeta__cabeza .admin-titulo { min-width: 0; }
+.tarjeta__cabeza .admin-titulo p { font-size: 13px; color: var(--texto-2); margin-top: 2px; }
+.admin-sello {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  flex: none;
+  border-radius: var(--r-md);
+  background: var(--superficie-tenue);
+  color: var(--texto-2);
+}
+.admin-sello svg { width: 19px; height: 19px; }
+
+.admin-rejilla .vacio { padding: 34px 20px; }
+
+/* ============ FORMULARIOS ================================== */
+
+.admin-casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 14px;
+  color: var(--texto);
+  cursor: pointer;
+  line-height: 1.45;
+}
+.admin-casilla input {
+  width: 20px; height: 20px;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--accion);
+  cursor: pointer;
+}
+.admin-casilla small { display: block; color: var(--texto-2); font-size: 12.5px; }
+
+.admin-forma-bascula { max-width: 760px; }
+.admin-forma-bascula .acciones-forma {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.admin-modal-nota { margin-top: 18px; }
+
+/* ============ RESPONSIVE =================================== */
+
+@media (max-width: 900px) {
+  .admin-rejilla { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 580px) {
+  .subpestanas { width: auto; border-radius: var(--r-md); }
+  .admin-herramientas .btn { width: 100%; margin-left: 0; }
+  .admin-forma-bascula .acciones-forma .btn { width: 100%; }
+}
+
+/* ---------- Matriz de roles y permisos ---------- */
+.matriz-permisos th.matriz-permisos__rol,
+.matriz-permisos td.matriz-permisos__celda {
+  text-align: center;
+  white-space: nowrap;
+}
+.matriz-permisos td:first-child { min-width: 260px; }
+.matriz-permisos td:first-child b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.matriz-permisos td:first-child b svg {
+  width: 14px; height: 14px;
+  flex: none;
+  color: var(--texto-3);
+}
+.matriz-permisos input[type="checkbox"] {
+  width: 20px; height: 20px;
+  accent-color: var(--accion);
+  cursor: pointer;
+}
+.matriz-permisos input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .55; }
+.matriz-permisos tfoot td { padding-top: 14px; padding-bottom: 14px; }
