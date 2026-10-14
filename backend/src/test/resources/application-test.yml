@@ -9,6 +9,7 @@ spring:
 incasa:
   bascula:
     simular: false
+    serie-habilitada: false
 
 logging:
   level:

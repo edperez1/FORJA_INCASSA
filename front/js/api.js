@@ -159,26 +159,40 @@ export const API = {
     let socket;
     let reintentos = 0;
     let cerradoAposta = false;
+    let vigilancia;
+    let reconexion;
 
     const abrir = () => {
       alCambiarEstado?.('conectando');
       socket = new WebSocket(`${url}?token=${encodeURIComponent(this.token())}`);
 
-      socket.onopen = () => { reintentos = 0; alCambiarEstado?.('conectada'); };
+      socket.onopen = () => {
+        alCambiarEstado?.('conectando');
+        vigilancia = setTimeout(() => socket.close(), 5000);
+      };
 
       socket.onmessage = ev => {
-        try { alRecibir(JSON.parse(ev.data)); }
+        try {
+          const trama = JSON.parse(ev.data);
+          if (!Number.isFinite(trama.peso) || !Number.isFinite(trama.bruto)) return;
+          clearTimeout(vigilancia);
+          vigilancia = setTimeout(() => socket.close(), 5000);
+          reintentos = 0;
+          alCambiarEstado?.('conectada');
+          alRecibir(trama);
+        }
         catch { console.warn('[bascula] trama ilegible:', ev.data); }
       };
 
       socket.onerror = () => alCambiarEstado?.('error');
 
       socket.onclose = () => {
+        clearTimeout(vigilancia);
         if (cerradoAposta) return;
         alCambiarEstado?.('desconectada');
         // Espera creciente: 1,6 s · 3,2 s · 6,4 s … hasta 15 s.
         reintentos += 1;
-        setTimeout(abrir, Math.min(15000, 800 * 2 ** reintentos));
+        reconexion = setTimeout(abrir, Math.min(15000, 800 * 2 ** reintentos));
       };
     };
 
@@ -188,7 +202,7 @@ export const API = {
       enviar: comando => {
         if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ comando }));
       },
-      cerrar: () => { cerradoAposta = true; socket?.close(); }
+      cerrar: () => { cerradoAposta = true; clearTimeout(vigilancia); clearTimeout(reconexion); socket?.close(); }
     };
   },
 

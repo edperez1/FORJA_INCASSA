@@ -68,10 +68,18 @@ incasa:
   bascula:
     # Marca, modelo, capacidad y división viven en la tabla `bascula` y se
     # editan desde el panel de administración.
-    # true  → el backend emite lecturas sintéticas (permite probar sin hardware)
-    # false → lee el puerto serie real. Requiere implementar LectorSerie.
-    simular: ${INCASA_BASCULA_SIMULAR:true}
+    # true → lecturas sintéticas; false → sin simulación automática.
+    # Para abrir el puerto real, activar también serie-habilitada. Ver RS232.md.
+    simular: ${INCASA_BASCULA_SIMULAR:false}
     puerto-serie: ${INCASA_PUERTO_SERIE:COM3}
+    serie-habilitada: ${INCASA_SERIE_HABILITADA:false}
+    baudios: ${INCASA_SERIE_BAUDIOS:9600}
+    bits-datos: ${INCASA_SERIE_BITS_DATOS:8}
+    paridad: ${INCASA_SERIE_PARIDAD:NONE}
+    bits-parada: ${INCASA_SERIE_BITS_PARADA:1}
+    direccion: ${INCASA_SERIE_DIRECCION:99}
+    estabilidad-ms: ${INCASA_SERIE_ESTABILIDAD_MS:1500}
+    timeout-ms: ${INCASA_SERIE_TIMEOUT_MS:3000}
 
 logging:
   level:

@@ -30,20 +30,18 @@ import tools.jackson.databind.ObjectMapper;
  *
  * CÓMO DEBE QUEDAR EN PLANTA
  * --------------------------------------------------------------------------
- * El indicador Hiweight X10 publica por puerto serie. La pieza que falta es un
- * lector que abra el COM con jSerialComm, parsee la trama del indicador y llame
- * a difundir(lectura) por cada muestra. Este handler ya hace todo lo demás:
- * registro de sesiones, reparto por báscula y comandos de vuelta.
+ * LectorSerie abre el COM con jSerialComm usando el protocolo X1 de referencia
+ * y llama a difundir por cada muestra. El modelo físico debe verificarse.
+ * Los comandos de vuelta sólo están implementados para el simulador.
  *
  * Cada conexión exige un token de sesión vigente (query string, porque el
  * navegador no deja poner cabeceras en un WebSocket). El sistema trabaja con
  * la báscula ACTIVA de la tabla `bascula`: de ahí salen código, modelo,
  * capacidad y división de cada trama.
  *
- * Mientras tanto, con incasa.bascula.simular = true el backend emite una
+ * Con incasa.bascula.simular = true el backend emite una
  * lectura sintética a 10 Hz, que es lo que permite probar el flujo de pesaje
- * completo contra Java sin tener la báscula delante. Poner la bandera en false
- * en cuanto el lector serie exista.
+ * completo contra Java sin tener la báscula delante. Está apagado por defecto.
  */
 @Component
 public class BasculaWebSocketHandler extends TextWebSocketHandler {
@@ -139,6 +137,8 @@ public class BasculaWebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession sesion, TextMessage mensaje) {
         Conexion con = abiertas.get(sesion.getId());
         if (con == null) return;
+        // El protocolo continuo X1 no documenta órdenes de cero/tara remotas.
+        if (!simular) return;
         Estado e = con.estado();
 
         Comando c;
@@ -158,8 +158,7 @@ public class BasculaWebSocketHandler extends TextWebSocketHandler {
             default      -> log.warn("Comando desconocido: {}", comando);
         }
 
-        // TODO: con hardware real, reenviar el comando al indicador por el
-        // puerto serie en lugar de aplicarlo aquí.
+        // El lector real es de solo lectura; no inventar órdenes del indicador.
     }
 
     /* ====================================================================

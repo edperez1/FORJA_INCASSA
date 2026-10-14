@@ -1,6 +1,8 @@
 # INCASA · Backend del Sistema de Pesaje
 
 API REST + WebSocket en **Spring Boot 4 / Java 21** sobre **SQL Server 2022**.
+
+Para probar el indicador físico con el perfil HiWEIGH X1, ver [RS232.md](RS232.md).
 Es el espejo exacto de `js/api.js`: cada ruta, cuerpo y código de error de
 ese archivo está implementado aquí y cubierto por `ContratoApiTest`.
 
@@ -72,7 +74,7 @@ muestra la configuración inicial. Pide el **código de instalación**
 | `INCASA_DB_USUARIO`         | `incasa_app`                      | Login de SQL Server                           |
 | `INCASA_DB_URL`             | `localhost:1433`, `incasa_pesaje` | Otra instancia u otra base                    |
 | `INCASA_CODIGO_INSTALACION` | `INCASA-2026`                     | Código para crear al propietario. **Cámbialo** |
-| `INCASA_BASCULA_SIMULAR`    | `true`                            | `false` cuando exista el lector serie         |
+| `INCASA_BASCULA_SIMULAR`    | `false`                           | `true` para demostración sin hardware          |
 | `INCASA_ACEPTAR_SIMULADOR`  | `false`                           | `true` sólo para formar operarios en pruebas  |
 | `INCASA_MERMA_MAXIMA`       | `2`                               | Merma máxima entrada → salida, en %           |
 | `INCASA_PUERTO_SERIE`       | `COM3`                            | Puerto del indicador                          |
@@ -155,9 +157,8 @@ ni.com.incasa.pesaje
 
 ## 7 · Pendiente
 
-- **Lector serie del indicador** (jSerialComm): llamar a
-  `BasculaWebSocketHandler.difundir(lectura)` por cada trama y poner
-  `INCASA_BASCULA_SIMULAR=false`.
+- **Validación física del lector serie**: implementado el protocolo X1 de
+  referencia con jSerialComm; confirmar modelo y salida del indicador del cliente.
 - **PDF en el servidor**: hoy los tres endpoints responden 501 y el navegador
   genera el documento con jsPDF. Sólo hace falta si el certificado debe llevar
   firma o numeración fiscal controlada por el servidor.

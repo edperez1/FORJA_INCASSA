@@ -6,6 +6,8 @@ dist/
 Thumbs.db
 
 # Backend
+backend/config/sql-clave.dpapi
+backend/*run*.log
 backend/target/
 backend/oracleJdk-27/
 # Lo genera `pnpm build:java`

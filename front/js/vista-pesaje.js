@@ -76,7 +76,7 @@ export const VistaPesaje = {
 
   acciones() {
     /* --- Fuente de lectura --- */
-    $('#btn-simular').addEventListener('click', () => this.alternarSimulador());
+    // Simulador deshabilitado en la interfaz; código conservado para desarrollo.
     $('#btn-manual').addEventListener('click', () => this.fijarFuente('manual'));
     $('#btn-salir-manual').addEventListener('click', () => this.fijarFuente(this.fuenteReal()));
     $('#btn-usar-manual').addEventListener('click', () => this.usarPesoManual());
@@ -278,7 +278,8 @@ export const VistaPesaje = {
       esperando: `<span class="fuente__esperando" aria-hidden="true"></span>
                   Esperando conexión con el indicador <b>${esc(e.modelo)}</b> / <b>${esc(e.codigo)}</b>`,
       conectada: `Indicador <b>${esc(e.modelo)}</b> conectado en <b>${esc(e.codigo)}</b>.
-                  Lectura en tiempo real.`,
+                  Lectura en tiempo real. Para RS-232, usa kg y deja la tara del indicador en cero.
+                  La estabilidad se estima por repetición del peso.`,
       simulador: `<b>Simulación activa.</b> Los pesos son generados por el navegador,
                   no provienen del indicador. El sistema no los acepta como pesajes de planta.`,
       manual:    `<b>Modo contingencia.</b> Teclea el peso bruto que muestra el
@@ -286,19 +287,21 @@ export const VistaPesaje = {
     };
     $('#fuente-estado').innerHTML = textos[this.fuente];
 
-    if (this.fuente === 'simulador') {
+    if (btnSimular && this.fuente === 'simulador') {
       btnSimular.innerHTML = `${icono('circle-stop')} Detener simulación`;
       btnSimular.className = 'btn btn--linea btn--sm';
-    } else {
+    } else if (btnSimular) {
       btnSimular.innerHTML = `${icono('play')} Activar Simulación de Báscula`;
       btnSimular.className = 'btn btn--ambar btn--sm';
     }
 
-    const enVivo = this.fuente === 'simulador' || this.fuente === 'conectada';
+    const enVivo = this.fuente === 'simulador';
     ['#tecla-cero', '#tecla-tara', '#tecla-bruto'].forEach(s => { $(s).disabled = !enVivo; });
   },
 
   alternarSimulador() {
+    // Sin control visible no se permite activar simulación.
+    if (!$('#btn-simular')) return;
     if (this.fuente === 'simulador') {
       this.fijarFuente(this.fuenteReal());
       aviso('Simulación detenida', 'La báscula vuelve al indicador real');
